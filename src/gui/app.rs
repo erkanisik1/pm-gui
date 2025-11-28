@@ -253,6 +253,83 @@ impl PackageManagerApp {
             }
         });
     }
+    pub fn load_packages_from_xml(&mut self) {
+        if !self.packages.is_empty() {
+            return; // Zaten yüklü
+        }
+
+        println!("Loading packages from local Pisi repository...");
+        
+        match XmlParser::load_pisi_index() {
+            Ok(packages) => {
+                self.packages = packages;
+                self.components = XmlParser::parse_components(&self.packages);
+                println!("Successfully loaded {} packages, {} components", 
+                         self.packages.len(), self.components.len());
+                
+                // Debug: İlk birkaç paketi göster
+                for pkg in self.packages.iter().take(5) {
+                    println!("  - {}: {} ({})", pkg.name, pkg.summary, pkg.part_of);
+                }
+            }
+            Err(e) => {
+                println!("Failed to load Pisi index: {}. Using mock data.", e);
+                self.create_mock_data();
+            }
+        }
+    }
+
+    /// Mock data fallback - sadece Pisi index yoksa
+    fn create_mock_data(&mut self) {
+        println!("Creating mock data for demonstration...");
+        
+        self.packages = vec![
+            PackageInfo {
+                name: "firefox".to_string(),
+                summary: "Mozilla Firefox Web Browser".to_string(),
+                description: "Fast and secure web browser".to_string(),
+                version: "115.0".to_string(),
+                release: 1,
+                license: "MPL-2.0".to_string(),
+                part_of: "web".to_string(),
+                package_size: 97_000_000,
+                installed_size: 245_000_000,
+                package_format: "1.0".to_string(),
+                distribution: "PisiLinux".to_string(),
+                distribution_release: "2.0".to_string(),
+                architecture: "x86_64".to_string(),
+                source: Some(Source {
+                    name: "firefox".to_string(),
+                    homepage: "https://www.mozilla.org/firefox/".to_string(),
+                }),
+                history: vec![],
+                dependencies: vec![],
+            },
+            PackageInfo {
+                name: "libreoffice".to_string(),
+                summary: "LibreOffice Office Suite".to_string(),
+                description: "Complete office productivity suite".to_string(),
+                version: "7.5.0".to_string(),
+                release: 1,
+                license: "MPL-2.0".to_string(),
+                part_of: "office".to_string(),
+                package_size: 245_000_000,
+                installed_size: 512_000_000,
+                package_format: "1.0".to_string(),
+                distribution: "PisiLinux".to_string(),
+                distribution_release: "2.0".to_string(),
+                architecture: "x86_64".to_string(),
+                source: Some(Source {
+                    name: "libreoffice".to_string(),
+                    homepage: "https://www.libreoffice.org/".to_string(),
+                }),
+                history: vec![],
+                dependencies: vec![],
+            },
+        ];
+        
+        self.components = XmlParser::parse_components(&self.packages);
+    }
 }
 
 impl eframe::App for PackageManagerApp {

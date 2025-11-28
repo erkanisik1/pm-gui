@@ -1,6 +1,7 @@
 use eframe::egui;
 use crate::gui::app::PackageManagerApp;
 use crate::backend::package_manager::PackageManager;
+use crate::backend::xml_parser::PackageInfo;
 
 #[derive(Default)]
 pub struct PackageGrid;
@@ -12,54 +13,147 @@ impl PackageGrid {
             ui.horizontal(|ui| {
                 ui.heading(&format!("{} Packages", app.selected_category));
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    ui.label(format!("{} packages found", 6)); // Mock count
+                    ui.label(format!("{} packages found", self.get_filtered_packages(app).len()));
                 });
             });
-
+            
             ui.separator();
-
+            
             // Package grid
             egui::ScrollArea::vertical().show(ui, |ui| {
-                // Use columns with explicit handling
-                let columns = 3;
-                let total_packages = 6; // Mock number
-                let packages_per_column = (total_packages + columns - 1) / columns;
-
-                ui.columns(columns, |columns| {
-                    for (col_index, column) in columns.iter_mut().enumerate() {
-                        column.vertical(|ui| {
-                            // Render packages for this column
-                            for i in 0..packages_per_column {
-                                let package_index = col_index * packages_per_column + i;
-                                if package_index < total_packages {
-                                    self.render_package_card(ui, package_index);
+                let filtered_packages = self.get_filtered_packages(app);
+                
+                if filtered_packages.is_empty() {
+                    ui.vertical_centered(|ui| {
+                        ui.heading("No packages found");
+                        ui.label("Try selecting a different category or component");
+                    });
+                } else {
+                    // Use columns for package grid
+                    let columns = 3;
+                    let packages_per_column = (filtered_packages.len() + columns - 1) / columns;
+                    
+                    ui.columns(columns, |columns| {
+                        for (col_index, column) in columns.iter_mut().enumerate() {
+                            column.vertical(|ui| {
+                                let start_index = col_index * packages_per_column;
+                                let end_index = std::cmp::min(start_index + packages_per_column, filtered_packages.len());
+                                
+                                for i in start_index..end_index {
+                                    if let Some(package) = filtered_packages.get(i) {
+                                        self.render_package_card(ui, package);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        });
+    }
+    
+    fn get_filtered_packages<'a>(&self, app: &'a PackageManagerApp) -> Vec<&'a PackageInfo> {
+        app.packages.iter()
+            .filter(|pkg| {
+                // Category filtreleme
+                let category_match = match app.selected_category.as_str() {
+                    "All" => true,
+                    "Installed" => self.is_package_installed(&pkg.name),
+                    "Updates" => self.has_package_update(&pkg.name),
+                    _ => true,
+                };
+                
+                // Component filtreleme
+                let component_match = if app.selected_component == "All" {
+                    true
+                } else {
+                    pkg.part_of == app.selected_component
+                };
+                
+                category_match && component_match
+            })
+            .collect()
+    }
+    
+    fn render_package_card(&self, ui: &mut egui::Ui, package: &PackageInfo) {
+        egui::Frame::group(ui.style()).show(ui, |ui| {
+            ui.vertical(|ui| {
+                // Package header
+                ui.horizontal(|ui| {
+                    // Paket ikonu
+                    let icon = self.get_package_icon(&package.name);
+                    ui.label(icon);
+                    
+                    ui.vertical(|ui| {
+                        ui.heading(&package.name);
+                        ui.label(&package.summary);
+                    });
+                });
+                
+                // Version info
+                ui.label(format!("Version: {}-{}", package.version, package.release));
+                ui.label(format!("Component: {}", package.part_of));
+                
+                // Size info - MB cinsinden göster
+                let size_mb = package.package_size / 1_000_000;
+                if size_mb > 0 {
+                    ui.label(format!("Size: {} MB", size_mb));
+                }
+                
+                // License
+                if !package.license.is_empty() {
+                    ui.label(format!("License: {}", package.license));
+                }
+                
+                // Action buttons
+                ui.horizontal(|ui| {
+                    if self.is_package_installed(&package.name) {
+                        if self.has_package_update(&package.name) {
+                            if ui.button("🔄 Update").clicked() {
+                                if let Err(e) = PackageManager::update_package(&package.name) {
+                                    eprintln!("Update error: {}", e);
                                 }
                             }
-                        });
+                        }
+                        
+                        if ui.button("🗑️ Remove").clicked() {
+                            if let Err(e) = PackageManager::remove_package(&package.name) {
+                                eprintln!("Remove error: {}", e);
+                            }
+                        }
+                    } else {
+                        if ui.button("📥 Install").clicked() {
+                            if let Err(e) = PackageManager::install_package(&package.name) {
+                                eprintln!("Install error: {}", e);
+                            }
+                        }
                     }
                 });
             });
         });
     }
-
-    [dependencies]
-eframe = "0.27"
-egui = "0.27"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-roxmltree = "0.19"
-anyhow = "1.0"
-image = { version = "0.24", default-features = false, features = ["png"] }
-# minreq kaldırıldı - artık HTTP isteği yapmıyoruz
-}
-
-// Mock package structure for demonstration
-struct MockPackage {
-    name: String,
-    description: String,
-    version: String,
-    installed_version: Option<String>,
-    icon: &'static str,
-    is_installed: bool,
-    has_update: bool,
+    
+    // Geçici implementasyonlar - bunları daha sonra gerçek Pisi komutlarıyla değiştireceğiz
+    fn is_package_installed(&self, _package_name: &str) -> bool {
+        // Geçici: Her zaman false döndür
+        false
+    }
+    
+    fn has_package_update(&self, _package_name: &str) -> bool {
+        // Geçici: Her zaman false döndür  
+        false
+    }
+    
+    fn get_package_icon(&self, package_name: &str) -> &'static str {
+        // Basit paket ikonu mapping
+        match package_name {
+            "firefox" => "🌐",
+            "libreoffice" => "📊",
+            "vlc" => "🎬",
+            "gimp" => "🎨",
+            "thunderbird" => "📧",
+            "konsole" => "💻",
+            _ => "📦",
+        }
+    }
 }

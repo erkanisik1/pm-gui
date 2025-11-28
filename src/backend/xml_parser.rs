@@ -65,21 +65,13 @@ impl XmlParser {
         let doc = Document::parse(xml_content)?;
         let mut packages = Vec::new();
 
-        // Pisi XML formatında paketler <Package> tag'i içinde değil
-        // Bunun yerine doğrudan root altında package node'ları var
-        for node in doc.root().children() {
+        // Root element'in tüm child'larını gez (Distribution hariç)
+        for node in doc.root_element().children() {
             if node.is_element() && node.tag_name().name() != "Distribution" {
-                let package_name = node.tag_name().name();
-                
-                // Debug için ilk 5 paketi göster
-                if packages.len() < 5 {
-                    println!("Debug package {}:", packages.len() + 1);
-                    println!("  Tag name: {}", package_name);
-                    println!("  Attributes: {:?}", node.attributes().map(|a| (a.name(), a.value())).collect::<Vec<_>>());
-                }
+                let package_name = node.tag_name().name().to_string();
                 
                 let package = PackageInfo {
-                    name: package_name.to_string(),
+                    name: package_name.clone(),
                     summary: Self::get_text(&node, "Summary").unwrap_or_default(),
                     description: Self::get_text(&node, "Description").unwrap_or_default(),
                     version: Self::get_text(&node, "Version").unwrap_or_default(),
@@ -87,7 +79,7 @@ impl XmlParser {
                         .and_then(|s| s.parse().ok())
                         .unwrap_or(1),
                     license: Self::get_text(&node, "License").unwrap_or_default(),
-                    part_of: node.attribute("partOf").unwrap_or("Unknown").to_string(),
+                    part_of: node.attribute("partOf").unwrap_or("system").to_string(),
                     package_size: node.attribute("packageSize")
                         .and_then(|s| s.parse().ok())
                         .unwrap_or(0),
@@ -102,11 +94,20 @@ impl XmlParser {
                     history: Self::parse_history(&node),
                     dependencies: Self::parse_dependencies(&node),
                 };
+                
                 packages.push(package);
             }
         }
 
-        println!("Parsed {} packages from Pisi index", packages.len());
+        // Debug: İlk 3 paketi göster
+        if !packages.is_empty() {
+            println!("First 3 packages parsed:");
+            for pkg in packages.iter().take(3) {
+                println!("  - {}: {} (partOf: {})", pkg.name, pkg.summary, pkg.part_of);
+            }
+        }
+
+        println!("Successfully parsed {} packages from Pisi index", packages.len());
         Ok(packages)
     }
 
@@ -114,8 +115,8 @@ impl XmlParser {
         let mut component_counts: HashMap<String, usize> = HashMap::new();
         
         for package in packages {
-            let component_name = if package.part_of == "Unknown" || package.part_of.is_empty() {
-                "other".to_string()
+            let component_name = if package.part_of.is_empty() {
+                "system".to_string()
             } else {
                 package.part_of.clone()
             };
@@ -123,8 +124,19 @@ impl XmlParser {
             *component_counts.entry(component_name).or_insert(0) += 1;
         }
 
-        println!("Found {} unique components", component_counts.len());
+        println!("Found {} unique components:", component_counts.len());
         
+        // Component'leri ve paket sayılarını göster
+        let mut components_list: Vec<(&String, &usize)> = component_counts.iter().collect();
+        components_list.sort_by(|a, b| a.0.cmp(b.0));
+        
+        for (name, count) in components_list.iter().take(10) {
+            println!("  - {}: {} packages", name, count);
+        }
+        if components_list.len() > 10 {
+            println!("  - ... and {} more components", components_list.len() - 10);
+        }
+
         let mut components: Vec<Component> = component_counts
             .into_iter()
             .map(|(name, count)| Component {

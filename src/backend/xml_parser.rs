@@ -61,13 +61,34 @@ impl XmlParser {
         Self::parse_pisi_index(&xml_content)
     }
 
+    impl XmlParser {
     pub fn parse_pisi_index(xml_content: &str) -> Result<Vec<PackageInfo>> {
         let doc = Document::parse(xml_content)?;
         let mut packages = Vec::new();
 
-        // Tüm <Package> tag'lerini bul
+        // Tüm <Package> tag'lerini bul, ancak <Obsoletes> içindekileri atla
         for node in doc.descendants().filter(|n| n.has_tag_name("Package")) {
-            let package_name = Self::get_text(&node, "Name").unwrap_or_else(|| "Unknown".to_string());
+            // Eğer bu paket <Obsoletes> içindeyse atla
+            if Self::is_in_obsoletes(&node) {
+                continue;
+            }
+
+            let package_name = Self::get_text(&node, "Name")
+                .unwrap_or_else(|| "Unknown".to_string());
+            
+            // Eğer paket ismi hala "Unknown" ise, debug et
+            if package_name == "Unknown" && packages.len() < 3 {
+                println!("=== DEBUG: Package with Unknown name ===");
+                println!("Node: {:?}", node.tag_name().name());
+                println!("All direct children:");
+                for child in node.children() {
+                    if child.is_element() {
+                        println!("  - {}: {:?}", child.tag_name().name(), child.text());
+                    }
+                }
+                println!("================");
+            }
+
             let part_of = Self::get_text(&node, "PartOf").unwrap_or_else(|| "system".to_string());
             let version = Self::get_text(&node, "Version").unwrap_or_default();
             
@@ -84,7 +105,7 @@ impl XmlParser {
                 summary: Self::get_text(&node, "Summary").unwrap_or_default(),
                 description: Self::get_text(&node, "Description").unwrap_or_default(),
                 version: version.clone(),
-                release: 1, // Varsayılan, gerçek release bilgisi History'den alınabilir
+                release: 1,
                 license: Self::get_text(&node, "License").unwrap_or_default(),
                 part_of: part_of.clone(),
                 package_size,
@@ -98,7 +119,10 @@ impl XmlParser {
                 dependencies: Self::parse_dependencies(&node),
             };
             
-            packages.push(package);
+            // Sadece geçerli paketleri ekle (isim ve versiyonu olan)
+            if package_name != "Unknown" && !version.is_empty() {
+                packages.push(package);
+            }
         }
 
         // Debug: İlk 3 paketi göster
@@ -109,8 +133,35 @@ impl XmlParser {
             }
         }
 
-        println!("Successfully parsed {} packages from Pisi index", packages.len());
+        println!("Successfully parsed {} valid packages from Pisi index", packages.len());
         Ok(packages)
+    }
+
+    /// <Obsoletes> tag'i içindeki paketleri kontrol et
+    fn is_in_obsoletes(node: &roxmltree::Node) -> bool {
+        let mut current = node.parent();
+        while let Some(parent) = current {
+            if parent.has_tag_name("Obsoletes") {
+                return true;
+            }
+            current = parent.parent();
+        }
+        false
+    }
+
+    fn get_text(node: &roxmltree::Node, tag_name: &str) -> Option<String> {
+        // Önce direk child'larda ara
+        for child in node.children() {
+            if child.is_element() && child.tag_name().name() == tag_name {
+                return child.text().map(|s| s.trim().to_string());
+            }
+        }
+        
+        // Sonra tüm descendant'larda ara
+        node.descendants()
+            .find(|n| n.has_tag_name(tag_name))
+            .and_then(|n| n.text())
+            .map(|s| s.trim().to_string())
     }
 
     pub fn parse_components(packages: &[PackageInfo]) -> Vec<Component> {

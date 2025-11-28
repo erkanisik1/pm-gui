@@ -51,20 +51,12 @@ pub struct Component {
 pub struct XmlParser;
 
 impl XmlParser {
-    /// Pisi index dosyasını oku ve parse et
     pub fn load_pisi_index() -> Result<Vec<PackageInfo>> {
         let path = "/var/lib/pisi/index/Stable/pisi-index.xml";
         println!("Loading Pisi index from: {}", path);
         
         let xml_content = std::fs::read_to_string(path)
             .map_err(|e| anyhow::anyhow!("Failed to read Pisi index file: {}", e))?;
-        
-        // İlk birkaç satırı debug için göster
-        let lines: Vec<&str> = xml_content.lines().take(10).collect();
-        println!("First 10 lines of XML:");
-        for (i, line) in lines.iter().enumerate() {
-            println!("{}: {}", i + 1, line);
-        }
         
         Self::parse_pisi_index(&xml_content)
     }
@@ -73,43 +65,45 @@ impl XmlParser {
         let doc = Document::parse(xml_content)?;
         let mut packages = Vec::new();
 
-        // İlk birkaç paketin attribute'larını debug et
-        let mut debug_count = 0;
-        
-        for node in doc.descendants().filter(|n| n.has_tag_name("Package")) {
-            if debug_count < 5 {
-                println!("Debug package {}:", debug_count + 1);
-                println!("  Name: {:?}", node.attribute("name"));
-                println!("  PartOf: {:?}", node.attribute("partOf"));
-                println!("  Summary: {:?}", Self::get_text(&node, "Summary"));
-                debug_count += 1;
+        // Pisi XML formatında paketler <Package> tag'i içinde değil
+        // Bunun yerine doğrudan root altında package node'ları var
+        for node in doc.root().children() {
+            if node.is_element() && node.tag_name().name() != "Distribution" {
+                let package_name = node.tag_name().name();
+                
+                // Debug için ilk 5 paketi göster
+                if packages.len() < 5 {
+                    println!("Debug package {}:", packages.len() + 1);
+                    println!("  Tag name: {}", package_name);
+                    println!("  Attributes: {:?}", node.attributes().map(|a| (a.name(), a.value())).collect::<Vec<_>>());
+                }
+                
+                let package = PackageInfo {
+                    name: package_name.to_string(),
+                    summary: Self::get_text(&node, "Summary").unwrap_or_default(),
+                    description: Self::get_text(&node, "Description").unwrap_or_default(),
+                    version: Self::get_text(&node, "Version").unwrap_or_default(),
+                    release: node.attribute("release")
+                        .and_then(|s| s.parse().ok())
+                        .unwrap_or(1),
+                    license: Self::get_text(&node, "License").unwrap_or_default(),
+                    part_of: node.attribute("partOf").unwrap_or("Unknown").to_string(),
+                    package_size: node.attribute("packageSize")
+                        .and_then(|s| s.parse().ok())
+                        .unwrap_or(0),
+                    installed_size: node.attribute("installedSize")
+                        .and_then(|s| s.parse().ok())
+                        .unwrap_or(0),
+                    package_format: node.attribute("packageFormat").unwrap_or("1.0").to_string(),
+                    distribution: node.attribute("distribution").unwrap_or("PisiLinux").to_string(),
+                    distribution_release: node.attribute("distributionRelease").unwrap_or("2.0").to_string(),
+                    architecture: node.attribute("architecture").unwrap_or("x86_64").to_string(),
+                    source: Self::parse_source(&node),
+                    history: Self::parse_history(&node),
+                    dependencies: Self::parse_dependencies(&node),
+                };
+                packages.push(package);
             }
-            
-            let package = PackageInfo {
-                name: node.attribute("name").unwrap_or("Unknown").to_string(),
-                summary: Self::get_text(&node, "Summary").unwrap_or_default(),
-                description: Self::get_text(&node, "Description").unwrap_or_default(),
-                version: Self::get_text(&node, "Version").unwrap_or_default(),
-                release: node.attribute("release")
-                    .and_then(|s| s.parse().ok())
-                    .unwrap_or(1),
-                license: Self::get_text(&node, "License").unwrap_or_default(),
-                part_of: node.attribute("partOf").unwrap_or("Unknown").to_string(),
-                package_size: node.attribute("packageSize")
-                    .and_then(|s| s.parse().ok())
-                    .unwrap_or(0),
-                installed_size: node.attribute("installedSize")
-                    .and_then(|s| s.parse().ok())
-                    .unwrap_or(0),
-                package_format: node.attribute("packageFormat").unwrap_or("1.0").to_string(),
-                distribution: node.attribute("distribution").unwrap_or("PisiLinux").to_string(),
-                distribution_release: node.attribute("distributionRelease").unwrap_or("2.0").to_string(),
-                architecture: node.attribute("architecture").unwrap_or("x86_64").to_string(),
-                source: Self::parse_source(&node),
-                history: Self::parse_history(&node),
-                dependencies: Self::parse_dependencies(&node),
-            };
-            packages.push(package);
         }
 
         println!("Parsed {} packages from Pisi index", packages.len());
@@ -131,11 +125,6 @@ impl XmlParser {
 
         println!("Found {} unique components", component_counts.len());
         
-        // Component'leri listele
-        for (name, count) in &component_counts {
-            println!("Component: {} ({} packages)", name, count);
-        }
-
         let mut components: Vec<Component> = component_counts
             .into_iter()
             .map(|(name, count)| Component {

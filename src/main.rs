@@ -31,18 +31,33 @@ fn main() -> eframe::Result<()> {
 }
 
 fn check_assets() {
+    let current_dir = std::env::current_dir().unwrap_or_default();
+    
     let asset_files = [
-        "assets/pisi-logo-light.png",
-        "assets/pisi-logo-dark.png", 
-        "assets/package-manager-icon-systemtr.png",
+        current_dir.join("assets/pisi-logo-light.png"),
+        current_dir.join("assets/pisi-logo-dark.png"), 
+        current_dir.join("assets/package-manager-icon-systemtr.png"),
     ];
     
-    println!("Checking asset files...");
+    println!("Checking asset files from: {}", current_dir.display());
     for asset in &asset_files {
-        if std::path::Path::new(asset).exists() {
-            println!("✓ Found: {}", asset);
+        if asset.exists() {
+            println!("✓ Found: {}", asset.display());
         } else {
-            println!("✗ Missing: {}", asset);
+            println!("✗ Missing: {}", asset.display());
         }
+    }
+    
+    // Assets dizinini de kontrol et
+    let assets_dir = current_dir.join("assets");
+    if assets_dir.exists() {
+        println!("✓ Assets directory exists");
+        if let Ok(entries) = std::fs::read_dir(&assets_dir) {
+            for entry in entries.flatten() {
+                println!("  - {}", entry.file_name().to_string_lossy());
+            }
+        }
+    } else {
+        println!("✗ Assets directory missing!");
     }
 }

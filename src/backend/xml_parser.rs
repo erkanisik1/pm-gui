@@ -59,6 +59,13 @@ impl XmlParser {
         let xml_content = std::fs::read_to_string(path)
             .map_err(|e| anyhow::anyhow!("Failed to read Pisi index file: {}", e))?;
         
+        // İlk birkaç satırı debug için göster
+        let lines: Vec<&str> = xml_content.lines().take(10).collect();
+        println!("First 10 lines of XML:");
+        for (i, line) in lines.iter().enumerate() {
+            println!("{}: {}", i + 1, line);
+        }
+        
         Self::parse_pisi_index(&xml_content)
     }
 
@@ -66,7 +73,18 @@ impl XmlParser {
         let doc = Document::parse(xml_content)?;
         let mut packages = Vec::new();
 
+        // İlk birkaç paketin attribute'larını debug et
+        let mut debug_count = 0;
+        
         for node in doc.descendants().filter(|n| n.has_tag_name("Package")) {
+            if debug_count < 5 {
+                println!("Debug package {}:", debug_count + 1);
+                println!("  Name: {:?}", node.attribute("name"));
+                println!("  PartOf: {:?}", node.attribute("partOf"));
+                println!("  Summary: {:?}", Self::get_text(&node, "Summary"));
+                debug_count += 1;
+            }
+            
             let package = PackageInfo {
                 name: node.attribute("name").unwrap_or("Unknown").to_string(),
                 summary: Self::get_text(&node, "Summary").unwrap_or_default(),

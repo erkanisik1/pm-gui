@@ -20,7 +20,6 @@ pub struct PackageInfo {
     pub source: Option<Source>,
     pub history: Vec<PackageHistory>,
     pub dependencies: Vec<Dependency>,
-    pub files: Vec<PackageFile>,
 }
 
 #[derive(Debug, Clone)]
@@ -44,12 +43,6 @@ pub struct Dependency {
 }
 
 #[derive(Debug, Clone)]
-pub struct PackageFile {
-    pub path: String,
-    pub file_type: String,
-}
-
-#[derive(Debug, Clone)]
 pub struct Component {
     pub name: String,
     pub package_count: usize,
@@ -58,6 +51,17 @@ pub struct Component {
 pub struct XmlParser;
 
 impl XmlParser {
+    /// Pisi index dosyasını oku ve parse et
+    pub fn load_pisi_index() -> Result<Vec<PackageInfo>> {
+        let path = "/var/lib/pisi/index/Stable/pisi-index.xml";
+        println!("Loading Pisi index from: {}", path);
+        
+        let xml_content = std::fs::read_to_string(path)
+            .map_err(|e| anyhow::anyhow!("Failed to read Pisi index file: {}", e))?;
+        
+        Self::parse_pisi_index(&xml_content)
+    }
+
     pub fn parse_pisi_index(xml_content: &str) -> Result<Vec<PackageInfo>> {
         let doc = Document::parse(xml_content)?;
         let mut packages = Vec::new();
@@ -86,12 +90,11 @@ impl XmlParser {
                 source: Self::parse_source(&node),
                 history: Self::parse_history(&node),
                 dependencies: Self::parse_dependencies(&node),
-                files: Self::parse_files(&node),
             };
             packages.push(package);
         }
 
-        println!("Parsed {} packages from XML", packages.len());
+        println!("Parsed {} packages from Pisi index", packages.len());
         Ok(packages)
     }
 
@@ -117,7 +120,13 @@ impl XmlParser {
             package_count: total_packages,
         });
 
-        components.sort_by(|a, b| a.name.cmp(&b.name));
+        // Sistem bileşenlerini en üste al
+        components.sort_by(|a, b| {
+            if a.name == "system" { std::cmp::Ordering::Less }
+            else if b.name == "system" { std::cmp::Ordering::Greater }
+            else { a.name.cmp(&b.name) }
+        });
+        
         components
     }
 
@@ -174,37 +183,5 @@ impl XmlParser {
         }
         
         deps
-    }
-
-    fn parse_files(node: &roxmltree::Node) -> Vec<PackageFile> {
-        let mut files = Vec::new();
-        
-        if let Some(files_node) = node.descendants().find(|n| n.has_tag_name("Files")) {
-            for file_node in files_node.descendants().filter(|n| n.has_tag_name("File")) {
-                let path = file_node.text().unwrap_or("").trim().to_string();
-                let file_type = file_node.attribute("type").unwrap_or("file").to_string();
-                
-                if !path.is_empty() {
-                    files.push(PackageFile { path, file_type });
-                }
-            }
-        }
-        
-        files
-    }
-
-    /// URL'den XML içeriğini indir
-    pub fn download_xml(url: &str) -> Result<String> {
-        let response = minreq::get(url).send()?;
-        if response.status_code == 200 {
-            Ok(response.as_str()?.to_string())
-        } else {
-            Err(anyhow::anyhow!("HTTP {}: Failed to download XML", response.status_code))
-        }
-    }
-
-    /// Dosyadan XML içeriğini oku (fallback için)
-    pub fn read_xml_file(path: &str) -> Result<String> {
-        Ok(std::fs::read_to_string(path)?)
     }
 }

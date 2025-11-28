@@ -256,15 +256,7 @@ impl PackageManagerApp {
         match XmlParser::load_pisi_index() {
             Ok(packages) => {
                 self.packages = packages;
-                
-                // Önce normal parsing'i dene
                 self.components = XmlParser::parse_components(&self.packages);
-                
-                // Eğer sadece 2 component varsa (sadece All ve Unknown), manuel parsing kullan
-                if self.components.len() <= 2 {
-                    println!("Normal parsing failed, using manual component detection...");
-                    self.components = XmlParser::parse_components_manual(&self.packages);
-                }
                 
                 println!("Successfully loaded {} packages, {} components", 
                          self.packages.len(), self.components.len());
@@ -275,7 +267,7 @@ impl PackageManagerApp {
                     println!("  - {}: {} (partOf: {})", pkg.name, pkg.summary, pkg.part_of);
                 }
                 
-                println!("Components:");
+                println!("All components:");
                 for comp in &self.components {
                     println!("  - {}: {} packages", comp.name, comp.package_count);
                 }

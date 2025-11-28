@@ -70,6 +70,23 @@ impl XmlParser {
             if node.is_element() && node.tag_name().name() != "Distribution" {
                 let package_name = node.tag_name().name().to_string();
                 
+                // Debug: İlk 3 paketin tüm attribute'larını göster
+                if packages.len() < 3 {
+                    println!("=== DEBUG PACKAGE {} ===", packages.len() + 1);
+                    println!("Tag name: {}", package_name);
+                    println!("All attributes:");
+                    for attr in node.attributes() {
+                        println!("  {}: {}", attr.name(), attr.value());
+                    }
+                    println!("Child elements:");
+                    for child in node.children() {
+                        if child.is_element() {
+                            println!("  - {}: {:?}", child.tag_name().name(), child.text());
+                        }
+                    }
+                    println!("================");
+                }
+                
                 let package = PackageInfo {
                     name: package_name.clone(),
                     summary: Self::get_text(&node, "Summary").unwrap_or_default(),
@@ -96,14 +113,6 @@ impl XmlParser {
                 };
                 
                 packages.push(package);
-            }
-        }
-
-        // Debug: İlk 3 paketi göster
-        if !packages.is_empty() {
-            println!("First 3 packages parsed:");
-            for pkg in packages.iter().take(3) {
-                println!("  - {}: {} (partOf: {})", pkg.name, pkg.summary, pkg.part_of);
             }
         }
 

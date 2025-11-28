@@ -65,54 +65,47 @@ impl XmlParser {
         let doc = Document::parse(xml_content)?;
         let mut packages = Vec::new();
 
-        // Root element'in tüm child'larını gez (Distribution hariç)
-        for node in doc.root_element().children() {
-            if node.is_element() && node.tag_name().name() != "Distribution" {
-                let package_name = node.tag_name().name().to_string();
+        // Tüm <Package> tag'lerini bul
+        for node in doc.descendants().filter(|n| n.has_tag_name("Package")) {
+            let package_name = Self::get_text(&node, "Name").unwrap_or_else(|| "Unknown".to_string());
+            let part_of = Self::get_text(&node, "PartOf").unwrap_or_else(|| "system".to_string());
+            let version = Self::get_text(&node, "Version").unwrap_or_default();
+            
+            let package_size = Self::get_text(&node, "PackageSize")
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(0);
                 
-                // Debug: İlk 3 paketin tüm attribute'larını göster
-                if packages.len() < 3 {
-                    println!("=== DEBUG PACKAGE {} ===", packages.len() + 1);
-                    println!("Tag name: {}", package_name);
-                    println!("All attributes:");
-                    for attr in node.attributes() {
-                        println!("  {}: {}", attr.name(), attr.value());
-                    }
-                    println!("Child elements:");
-                    for child in node.children() {
-                        if child.is_element() {
-                            println!("  - {}: {:?}", child.tag_name().name(), child.text());
-                        }
-                    }
-                    println!("================");
-                }
-                
-                let package = PackageInfo {
-                    name: package_name.clone(),
-                    summary: Self::get_text(&node, "Summary").unwrap_or_default(),
-                    description: Self::get_text(&node, "Description").unwrap_or_default(),
-                    version: Self::get_text(&node, "Version").unwrap_or_default(),
-                    release: node.attribute("release")
-                        .and_then(|s| s.parse().ok())
-                        .unwrap_or(1),
-                    license: Self::get_text(&node, "License").unwrap_or_default(),
-                    part_of: node.attribute("partOf").unwrap_or("system").to_string(),
-                    package_size: node.attribute("packageSize")
-                        .and_then(|s| s.parse().ok())
-                        .unwrap_or(0),
-                    installed_size: node.attribute("installedSize")
-                        .and_then(|s| s.parse().ok())
-                        .unwrap_or(0),
-                    package_format: node.attribute("packageFormat").unwrap_or("1.0").to_string(),
-                    distribution: node.attribute("distribution").unwrap_or("PisiLinux").to_string(),
-                    distribution_release: node.attribute("distributionRelease").unwrap_or("2.0").to_string(),
-                    architecture: node.attribute("architecture").unwrap_or("x86_64").to_string(),
-                    source: Self::parse_source(&node),
-                    history: Self::parse_history(&node),
-                    dependencies: Self::parse_dependencies(&node),
-                };
-                
-                packages.push(package);
+            let installed_size = Self::get_text(&node, "InstalledSize")
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(0);
+
+            let package = PackageInfo {
+                name: package_name.clone(),
+                summary: Self::get_text(&node, "Summary").unwrap_or_default(),
+                description: Self::get_text(&node, "Description").unwrap_or_default(),
+                version: version.clone(),
+                release: 1, // Varsayılan, gerçek release bilgisi History'den alınabilir
+                license: Self::get_text(&node, "License").unwrap_or_default(),
+                part_of: part_of.clone(),
+                package_size,
+                installed_size,
+                package_format: Self::get_text(&node, "PackageFormat").unwrap_or_else(|| "1.2".to_string()),
+                distribution: Self::get_text(&node, "Distribution").unwrap_or_else(|| "PisiLinux".to_string()),
+                distribution_release: Self::get_text(&node, "DistributionRelease").unwrap_or_else(|| "2.0".to_string()),
+                architecture: Self::get_text(&node, "Architecture").unwrap_or_else(|| "x86_64".to_string()),
+                source: Self::parse_source(&node),
+                history: Self::parse_history(&node),
+                dependencies: Self::parse_dependencies(&node),
+            };
+            
+            packages.push(package);
+        }
+
+        // Debug: İlk 3 paketi göster
+        if !packages.is_empty() {
+            println!("First 3 packages parsed correctly:");
+            for pkg in packages.iter().take(3) {
+                println!("  - {}: {} (PartOf: {})", pkg.name, pkg.summary, pkg.part_of);
             }
         }
 
@@ -124,26 +117,17 @@ impl XmlParser {
         let mut component_counts: HashMap<String, usize> = HashMap::new();
         
         for package in packages {
-            let component_name = if package.part_of.is_empty() {
-                "system".to_string()
-            } else {
-                package.part_of.clone()
-            };
-            
-            *component_counts.entry(component_name).or_insert(0) += 1;
+            *component_counts.entry(package.part_of.clone()).or_insert(0) += 1;
         }
 
         println!("Found {} unique components:", component_counts.len());
         
         // Component'leri ve paket sayılarını göster
         let mut components_list: Vec<(&String, &usize)> = component_counts.iter().collect();
-        components_list.sort_by(|a, b| a.0.cmp(b.0));
+        components_list.sort_by(|a, b| b.1.cmp(a.1)); // Paket sayısına göre sırala
         
-        for (name, count) in components_list.iter().take(10) {
+        for (name, count) in components_list.iter().take(20) {
             println!("  - {}: {} packages", name, count);
-        }
-        if components_list.len() > 10 {
-            println!("  - ... and {} more components", components_list.len() - 10);
         }
 
         let mut components: Vec<Component> = component_counts
@@ -161,7 +145,7 @@ impl XmlParser {
             package_count: total_packages,
         });
 
-        // Alfabetik sırala
+        // Component'leri alfabetik sırala
         components.sort_by(|a, b| a.name.cmp(&b.name));
         
         components
@@ -207,7 +191,7 @@ impl XmlParser {
     fn parse_dependencies(node: &roxmltree::Node) -> Vec<Dependency> {
         let mut deps = Vec::new();
         
-        if let Some(deps_node) = node.descendants().find(|n| n.has_tag_name("Dependencies")) {
+        if let Some(deps_node) = node.descendants().find(|n| n.has_tag_name("RuntimeDependencies")) {
             for package_node in deps_node.descendants().filter(|n| n.has_tag_name("Package")) {
                 let name = package_node.text().unwrap_or("").trim().to_string();
                 let version = package_node.attribute("version").map(|s| s.to_string());

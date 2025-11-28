@@ -130,15 +130,6 @@ impl PackageManagerApp {
         ctx.set_style(style);
     }
 
-    pub fn load_packages_from_xml(&mut self) {
-        // This will load actual data from XML file
-        // For now, using mock data
-        if self.packages.is_empty() {
-            // In real implementation, read from /var/lib/pisi/index/Stable/pisi-index.xml
-            self.components = XmlParser::parse_components(&self.packages);
-        }
-    }
-
     fn handle_events(&mut self) {
         while let Some(event) = self.event_manager.pop() {
             match event {

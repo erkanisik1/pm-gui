@@ -258,19 +258,24 @@ impl PackageManagerApp {
                 self.packages = packages;
                 self.components = XmlParser::parse_components(&self.packages);
                 
-                println!("=== PACKAGE LOADING SUMMARY ===");
+                println!("=== FINAL PACKAGE LOADING SUMMARY ===");
                 println!("Total packages loaded: {}", self.packages.len());
                 println!("Total components found: {}", self.components.len());
                 
                 // Component'leri göster
-                println!("\nComponents:");
-                for comp in &self.components {
-                    println!("  - {}: {} packages", comp.name, comp.package_count);
+                println!("\nTop 10 components by package count:");
+                let mut sorted_components = self.components.clone();
+                sorted_components.sort_by(|a, b| b.package_count.cmp(&a.package_count));
+                
+                for comp in sorted_components.iter().take(10) {
+                    if comp.name != "All" {
+                        println!("  - {}: {} packages", comp.name, comp.package_count);
+                    }
                 }
                 
-                // İlk 5 paketi detaylı göster
-                println!("\nFirst 5 packages (detailed):");
-                for pkg in self.packages.iter().take(5) {
+                // İlk 3 paketi detaylı göster
+                println!("\nFirst 3 packages (with correct PartOf):");
+                for pkg in self.packages.iter().take(3) {
                     println!("  - {}", pkg.name);
                     println!("    Summary: {}", pkg.summary);
                     println!("    Version: {}", pkg.version);

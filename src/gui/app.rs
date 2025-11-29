@@ -39,8 +39,6 @@ pub struct PackageManagerApp {
     pub image_loader: ImageLoader,
 }
 
-// ... geri kalan kod aynı kalacak ...
-
 impl PackageManagerApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // Sistem fontlarını yükle

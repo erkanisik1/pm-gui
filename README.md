@@ -36,7 +36,7 @@ src/
 
     ✅ Modüler mimari (backend, config, gui)
 
-    ❌ Gerçek XML parsing (şu an mock data)
+    ✅ Gerçek XML parsing (şu an mock data)
 
     ❌ Pisi paket yöneticisi entegrasyonu
 

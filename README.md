@@ -1,4 +1,28 @@
 Mevcut Proje Yapısı
+src/
+├── main.rs
+├── lib.rs
+├── gui/
+│   ├── app.rs
+│   ├── mod.rs
+│   ├── events.rs
+│   ├── image_loader.rs
+│   ├── themes.rs
+│   └── components/
+│       ├── mod.rs
+│       ├── sidebar.rs
+│       ├── package_grid.rs
+│       ├── package_details.rs
+│       └── settings_modal.rs
+├── backend/
+│   ├── mod.rs
+│   ├── package_manager.rs
+│   ├── repository.rs
+│   └── xml_parser.rs
+└── config/
+    ├── mod.rs
+    ├── settings.rs
+    └── themes.rs
 
 Şu anki proje durumu:
 

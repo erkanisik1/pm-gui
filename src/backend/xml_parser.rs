@@ -167,7 +167,8 @@ impl XmlParser {
         let mut component_counts: HashMap<String, usize> = HashMap::new();
         
         for package in packages {
-            *component_counts.entry(package.part_of.clone()).or_insert(0) += 1;
+            let component_name = Self::format_component_name(&package.part_of);
+            *component_counts.entry(component_name).or_insert(0) += 1;
         }
 
         println!("Found {} unique components:", component_counts.len());
@@ -176,7 +177,7 @@ impl XmlParser {
         let mut components_list: Vec<(&String, &usize)> = component_counts.iter().collect();
         components_list.sort_by(|a, b| b.1.cmp(a.1)); // Paket sayısına göre sırala
         
-        for (name, count) in components_list.iter().take(20) {
+        for (name, count) in components_list.iter().take(15) {
             println!("  - {}: {} packages", name, count);
         }
 
@@ -199,6 +200,48 @@ impl XmlParser {
         components.sort_by(|a, b| a.name.cmp(&b.name));
         
         components
+    }
+
+    /// Component isimlerini daha okunabilir hale getir
+    fn format_component_name(raw_name: &str) -> String {
+        match raw_name {
+            "programming.devel" => "Programming - Development".to_string(),
+            "programming.language.python3" => "Programming - Python 3".to_string(),
+            "programming.docs" => "Programming - Documentation".to_string(),
+            "system.locale" => "System - Localization".to_string(),
+            "programming.language.perl" => "Programming - Perl".to_string(),
+            "office.libreoffice" => "Office - LibreOffice".to_string(),
+            "system.devel" => "System - Development".to_string(),
+            "programming.library" => "Programming - Libraries".to_string(),
+            "system.base" => "System - Base".to_string(),
+            "desktop.kde.applications" => "Desktop - KDE Applications".to_string(),
+            "multimedia.sound" => "Multimedia - Sound".to_string(),
+            "x11.library" => "X11 - Libraries".to_string(),
+            "desktop.kde5.framework" => "Desktop - KDE5 Framework".to_string(),
+            "desktop.kde.framework" => "Desktop - KDE Framework".to_string(),
+            "office.misc" => "Office - Miscellaneous".to_string(),
+            "desktop.misc" => "Desktop - Miscellaneous".to_string(),
+            "multimedia.misc" => "Multimedia - Miscellaneous".to_string(),
+            "programming.misc" => "Programming - Miscellaneous".to_string(),
+            "emul32" => "Emulation - 32-bit".to_string(),
+            "multimedia.graphics.gimp.l10n" => "Multimedia - GIMP Localization".to_string(),
+            _ => {
+                // Genel formatlama
+                raw_name
+                    .replace('.', " - ")
+                    .replace("_", " ")
+                    .split(' ')
+                    .map(|word| {
+                        let mut chars = word.chars();
+                        match chars.next() {
+                            None => String::new(),
+                            Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                        }
+                    })
+                    .collect::<Vec<String>>()
+                    .join(" ")
+            }
+        }
     }
 
     fn parse_source(node: &roxmltree::Node) -> Option<Source> {

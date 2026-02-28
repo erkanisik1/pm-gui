@@ -1,4 +1,5 @@
 # Mevcut Proje Yapısı
+.
 src/
 ├── main.rs
 ├── lib.rs

@@ -1,5 +1,5 @@
 # Mevcut Proje Yapısı
-'
+"
 src/
 ├── main.rs
 ├── lib.rs
@@ -24,7 +24,7 @@ src/
     ├── mod.rs
     ├── settings.rs
     └── themes.rs
-
+"
 # Şu anki proje durumu:
 
     ✅ Temel paket yönetici arayüzü

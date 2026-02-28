@@ -1,4 +1,4 @@
-Mevcut Proje Yapısı
+# Mevcut Proje Yapısı
 src/
 ├── main.rs
 ├── lib.rs
@@ -24,7 +24,7 @@ src/
     ├── settings.rs
     └── themes.rs
 
-Şu anki proje durumu:
+# Şu anki proje durumu:
 
     ✅ Temel paket yönetici arayüzü
 
@@ -44,32 +44,32 @@ src/
 
     ❌ Paket arama ve filtreleme
 
-İş Bölümü Önerileri
+# İş Bölümü Önerileri
 
 Hangi alanlarda katkıda bulunmak istersiniz?
 
- 1.   Backend Geliştirme
+1. Backend Geliştirme
 
-      ❌  XML parser'ı gerçek verilerle çalışacak şekilde güncelleme
+    ❌  XML parser'ı gerçek verilerle çalışacak şekilde güncelleme
 
-      ❌  Pisi komutları entegrasyonu
+    ❌  Pisi komutları entegrasyonu
 
-      ❌  Paket cache ve repo yönetimi
+    ❌  Paket cache ve repo yönetimi
 
-  2.  Frontend/UI Geliştirme
+2. Frontend/UI Geliştirme
 
-      ❌ Paket arama ve filtreleme
+    ❌ Paket arama ve filtreleme
 
-      ❌ Daha gelişmiş paket detay görünümü
+    ❌ Daha gelişmiş paket detay görünümü
 
-      ❌ Sistem teması algılama
+    ❌ Sistem teması algılama
 
-      ❌ Responsive tasarım iyileştirmeleri
+    ❌ Responsive tasarım iyileştirmeleri
 
-  3.  Özellik Geliştirme
+3. Özellik Geliştirme
 
-      ❌  Paket güncelleme yöneticisi
+    ❌  Paket güncelleme yöneticisi
 
-      ❌  Batch işlemler (toplu kurma/kaldırma)
+    ❌  Batch işlemler (toplu kurma/kaldırma)
 
-      ❌ Paket istatistikleri ve raporlama
+    ❌ Paket istatistikleri ve raporlama

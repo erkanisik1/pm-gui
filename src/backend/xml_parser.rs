@@ -68,12 +68,16 @@ impl XmlParser {
         {
             let cache = CACHED_PACKAGES.lock().unwrap();
             if let Some(packages) = &*cache {
+                println!("RAM Cache HIT: {} packages", packages.len());
                 return Ok(packages.clone());
             }
         }
 
+        println!("RAM Cache MISS. Checking Disk Cache...");
+
         // 2. Durum: Disk önbelleği (Binary Cache) kontrolü
         if let Some(cached) = Self::load_from_binary_cache()? {
+            println!("Disk Cache HIT: {} packages", cached.len());
             let mut cache = CACHED_PACKAGES.lock().unwrap();
             *cache = Some(cached.clone());
             return Ok(cached);
@@ -251,7 +255,14 @@ impl XmlParser {
 
     /// Component isimlerini daha okunabilir hale getir
     fn format_component_name(raw_name: &str) -> String {
-        match raw_name {
+        // "desktop." öneğini temizle (Kullanıcı isteği: "desktop olmasın")
+        let clean_name = if raw_name.starts_with("desktop.") {
+            &raw_name[8..]
+        } else {
+            raw_name
+        };
+
+        match clean_name {
             "programming.devel" => "Programming - Development".to_string(),
             "programming.language.python3" => "Programming - Python 3".to_string(),
             "programming.docs" => "Programming - Documentation".to_string(),
@@ -261,20 +272,20 @@ impl XmlParser {
             "system.devel" => "System - Development".to_string(),
             "programming.library" => "Programming - Libraries".to_string(),
             "system.base" => "System - Base".to_string(),
-            "desktop.kde.applications" => "Desktop - KDE Applications".to_string(),
+            "kde.applications" => "KDE Applications".to_string(),
             "multimedia.sound" => "Multimedia - Sound".to_string(),
             "x11.library" => "X11 - Libraries".to_string(),
-            "desktop.kde5.framework" => "Desktop - KDE5 Framework".to_string(),
-            "desktop.kde.framework" => "Desktop - KDE Framework".to_string(),
+            "kde5.framework" => "KDE5 Framework".to_string(),
+            "kde.framework" => "KDE Framework".to_string(),
             "office.misc" => "Office - Miscellaneous".to_string(),
-            "desktop.misc" => "Desktop - Miscellaneous".to_string(),
+            "misc" => "Miscellaneous".to_string(),
             "multimedia.misc" => "Multimedia - Miscellaneous".to_string(),
             "programming.misc" => "Programming - Miscellaneous".to_string(),
             "emul32" => "Emulation - 32-bit".to_string(),
             "multimedia.graphics.gimp.l10n" => "Multimedia - GIMP Localization".to_string(),
             _ => {
                 // Genel formatlama
-                raw_name
+                clean_name
                     .replace('.', " - ")
                     .replace("_", " ")
                     .split(' ')

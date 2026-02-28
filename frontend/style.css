@@ -21,6 +21,15 @@
     box-sizing: border-box;
 }
 
+body,
+#app {
+    width: 100%;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--light-bg);
@@ -71,8 +80,8 @@ body.dark .modal-content {
 }
 
 .header-content {
-    max-width: 1400px;
-    margin: 0 auto;
+    width: 100%;
+    margin: 0;
     padding: 0 2rem;
     display: flex;
     justify-content: space-between;
@@ -118,10 +127,20 @@ body.dark .modal-content {
 
 .main-container {
     display: grid;
-    grid-template-columns: 280px 1fr 350px;
+    grid-template-columns: 280px 1fr;
+    /* Default 2 columns */
     height: calc(100vh - 80px);
-    max-width: 1400px;
-    margin: 0 auto;
+    width: 100%;
+    margin: 0;
+    background: var(--bg-color);
+    box-shadow: none;
+    border-radius: 0;
+    overflow: hidden;
+}
+
+/* Detay paneli açıkken 3 sütun */
+.main-container.has-details {
+    grid-template-columns: 280px 1fr 350px;
 }
 
 .sidebar {
@@ -136,11 +155,14 @@ body.dark .modal-content {
 }
 
 .sidebar-section h3 {
-    margin-bottom: 1rem;
+    margin-bottom: 1.25rem;
     color: var(--primary-color);
-    font-size: 0.9rem;
+    font-size: 1rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 5px;
 }
 
 .category-list,
@@ -206,7 +228,7 @@ body.dark .modal-content {
 .main-content {
     background: var(--light-bg);
     padding: 1.5rem;
-    ovedrflow-y: auto;
+    overflow-y: auto;
 }
 
 .content-header {
@@ -373,6 +395,18 @@ body.dark .modal-content {
     height: 48px;
     border-radius: var(--border-radius);
     overflow: hidden;
+}
+
+.package-category {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 0.25rem;
+    text-transform: capitalize;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 0.25rem 0.5rem;
+    display: inline-block;
+    background-color: var(--light-bg);
 }
 
 .package-summary {

@@ -109,6 +109,7 @@ function updateElementReferences() {
         searchInput: document.getElementById('search-input'),
         packageDetails: document.getElementById('package-details'),
         detailsPanel: document.getElementById('details-panel'),
+        mainContainer: document.querySelector('.main-container'),
         componentsList: document.getElementById('components-list'),
         settingsModal: document.getElementById('settings-modal'),
         themeToggle: document.getElementById('theme-toggle'),
@@ -129,23 +130,32 @@ function updateElementReferences() {
 
 async function refreshData() {
     try {
-        const stats = await invoke('get_package_stats');
-        console.log('Stats loaded:', stats);
+        showLoading(true);
+
+        // Verileri paralel olarak çek
+        const [pkgs, installed, upgradable, components] = await Promise.all([
+            invoke('get_packages'),
+            invoke('get_installed_packages'),
+            invoke('get_upgradable_packages'),
+            invoke('get_components')
+        ]);
+
+        packages = pkgs;
+        installedPackageNames = installed;
+        upgradablePackageNames = upgradable;
+
+        console.log(`Data loaded: ${packages.length} total, ${installed.length} installed, ${upgradable.length} updates`);
+
+        // İstatistikleri yerel veriden güncelle
+        const stats = {
+            total_count: packages.length,
+            installed_count: installed.length,
+            available_count: Math.max(0, packages.length - installed.length),
+            updates_count: upgradable.length
+        };
         updateUIStats(stats);
 
-        showLoading(true);
-        packages = await invoke('get_packages');
-        console.log(`Loaded ${packages.length} total packages`);
-
-        installedPackageNames = await invoke('get_installed_packages');
-        console.log(`Loaded ${installedPackageNames.length} installed packages`);
-
-        upgradablePackageNames = await invoke('get_upgradable_packages');
-        console.log(`Loaded ${upgradablePackageNames.length} upgradable packages`);
-
-        const components = await invoke('get_components');
         renderComponents(components);
-
         filterAndRender();
     } catch (error) {
         console.error('Data refresh failed:', error);
@@ -210,6 +220,7 @@ function initializeEventListeners() {
 
     document.getElementById('close-details')?.addEventListener('click', () => {
         if (elements.detailsPanel) elements.detailsPanel.style.display = 'none';
+        elements.mainContainer?.classList.remove('has-details');
     });
 }
 
@@ -217,6 +228,11 @@ function filterAndRender() {
     const query = elements.searchInput?.value.toLowerCase().trim() || '';
 
     filteredPackages = packages.filter(pkg => {
+        // Devel paketlerini gizle (Eğer kullanıcı aramıyorsa)
+        if (!query && (pkg.name.toLowerCase().includes('devel') || pkg.part_of.toLowerCase().includes('devel'))) {
+            return false;
+        }
+
         // Arama sorgusu filtresi
         if (query && !pkg.name.toLowerCase().includes(query) && !pkg.summary.toLowerCase().includes(query)) {
             return false;
@@ -295,7 +311,7 @@ function createPackageCard(pkg) {
             </div>
             <div class="package-summary">${pkg.summary}</div>
             <div class="package-info">
-                <span>📁 ${pkg.part_of}</span>
+                <span class="package-category">${pkg.part_of}</span>
             </div>
         </div>
     `;
@@ -305,6 +321,7 @@ function selectPackage(pkg) {
     selectedPackage = pkg;
     if (elements.detailsPanel) {
         elements.detailsPanel.style.display = 'block';
+        elements.mainContainer?.classList.add('has-details');
         if (elements.packageDetails) {
             const isInstalled = installedPackageNames.includes(pkg.name);
             const hasUpdate = upgradablePackageNames.includes(pkg.name);
@@ -361,8 +378,10 @@ function renderComponents(components) {
     elements.componentsList.innerHTML = components.map(comp => {
         // "all" id'li bileşen için "Tümü" çevirisini kullan, diğerleri için name'i kullan
         const displayName = comp.id === 'all' ? allText : comp.name;
+
         return `
-            <button class="component-btn ${comp.id === currentComponent ? 'active' : ''}" data-component="${comp.id}">
+            <button class="component-btn ${comp.id === currentComponent ? 'active' : ''}" 
+            data-component="${comp.id}">
                 ${displayName} (${comp.package_count})
             </button>
         `;

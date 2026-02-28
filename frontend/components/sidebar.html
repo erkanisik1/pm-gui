@@ -3,31 +3,37 @@
 
     <div class="sidebar-section">
         <h3 data-i18n="components">Bileşenler</h3>
-        <div id="components-list" class="components-list">
-            <button class="component-btn active" data-component="all">
-                <span data-i18n="all">Tümü</span> (<span id="sidebar-comp-total-count">0</span>)
-            </button>
+        <ul id="components-list" class="components-list">
+
             <!-- Components will be loaded dynamically -->
-        </div>
+        </ul>
     </div>
     <div class="sidebar-section">
         <h3 data-i18n="categories">Kategoriler</h3>
-        <div class="category-list">
-            <button class="category-btn active" data-category="all">
-                📚 <span data-i18n="all_packages">Tüm Paketler</span> (<span id="sidebar-total-count">0</span>)
-            </button>
-            <button class="category-btn" data-category="installed">
-                📦 <span data-i18n="installed_packages">Kurulu Paketler</span> (<span
-                    id="sidebar-installed-count">0</span>)
-            </button>
-            <button class="category-btn" data-category="updates">
-                🔄 <span data-i18n="upgradable_packages">Güncellenecek</span> (<span
-                    id="sidebar-updates-count">0</span>)
-            </button>
-            <button class="category-btn" data-category="explorer">
-                🔍 <span data-i18n="discover">Keşfet</span>
-            </button>
-        </div>
+        <ul class="category-list">
+            <li>
+                <button class="category-btn active" data-category="all">
+                    <span data-i18n="all_packages">Tüm Paketler</span> (<span id="sidebar-total-count">0</span>)
+                </button>
+            </li>
+            <li>
+                <button class="category-btn" data-category="installed">
+                    <span data-i18n="installed_packages">Kurulu Paketler</span> (<span
+                        id="sidebar-installed-count">0</span>)
+                </button>
+            </li>
+            <li>
+                <button class="category-btn" data-category="updates">
+                    <span data-i18n="upgradable_packages">Güncellenecek</span> (<span
+                        id="sidebar-updates-count">0</span>)
+                </button>
+            </li>
+            <li>
+                <button class="category-btn" data-category="explorer">
+                    <span data-i18n="discover">Keşfet</span>
+                </button>
+            </li>
+        </ul>
     </div>
 
 

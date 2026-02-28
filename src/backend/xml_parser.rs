@@ -25,6 +25,7 @@ pub struct PackageInfo {
     pub distribution: String,
     pub distribution_release: String,
     pub architecture: String,
+    pub icon: Option<String>,
     pub source: Option<Source>,
     pub history: Vec<PackageHistory>,
     pub dependencies: Vec<Dependency>,
@@ -100,6 +101,11 @@ impl XmlParser {
         Ok(packages)
     }
 
+    pub fn get_components() -> Result<Vec<Component>> {
+        let packages = Self::load_pisi_index()?;
+        Ok(Self::parse_components(&packages))
+    }
+
     fn load_from_binary_cache() -> Result<Option<Vec<PackageInfo>>> {
         let xml_path = Path::new(Self::INDEX_PATH);
         let cache_path = Path::new(Self::CACHE_PATH);
@@ -141,19 +147,21 @@ impl XmlParser {
         let doc = Document::parse(xml_content)?;
         let mut packages = Vec::new();
 
-        // Tüm <Package> tag'lerini bul, ancak <Obsoletes> içindekileri atla
-        for node in doc.descendants().filter(|n| n.has_tag_name("Package")) {
-            // Eğer bu paket <Obsoletes> içindeyse atla
-            if Self::is_in_obsoletes(&node) {
-                continue;
-            }
+        // Sadece kök düğüm altındaki <Package> tag'lerini bul (Performans için)
+        for node in doc.root_element().children().filter(|n| n.has_tag_name("Package")) {
 
             let package_name = Self::get_text(&node, "Name")
                 .unwrap_or_else(|| "Unknown".to_string());
             
             let part_of = Self::get_text(&node, "PartOf").unwrap_or_else(|| "system".to_string());
-            let version = Self::get_text(&node, "Version").unwrap_or_default();
             
+            let history = Self::parse_history(&node);
+            let (version, release) = if let Some(latest) = history.first() {
+                (latest.version.clone(), latest.release)
+            } else {
+                (String::new(), 0)
+            };
+
             let package_size = Self::get_text(&node, "PackageSize")
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(0);
@@ -164,10 +172,10 @@ impl XmlParser {
 
             let package = PackageInfo {
                 name: package_name.clone(),
-                summary: Self::get_text(&node, "Summary").unwrap_or_default(),
-                description: Self::get_text(&node, "Description").unwrap_or_default(),
-                version: version.clone(),
-                release: 1,
+                summary: Self::get_multilang_text(&node, "Summary").unwrap_or_default(),
+                description: Self::get_multilang_text(&node, "Description").unwrap_or_default(),
+                version,
+                release,
                 license: Self::get_text(&node, "License").unwrap_or_default(),
                 part_of: part_of.clone(),
                 package_size,
@@ -176,31 +184,20 @@ impl XmlParser {
                 distribution: Self::get_text(&node, "Distribution").unwrap_or_else(|| "PisiLinux".to_string()),
                 distribution_release: Self::get_text(&node, "DistributionRelease").unwrap_or_else(|| "2.0".to_string()),
                 architecture: Self::get_text(&node, "Architecture").unwrap_or_else(|| "x86_64".to_string()),
+                icon: Self::get_text(&node, "Icon"),
                 source: Self::parse_source(&node),
-                history: Self::parse_history(&node),
+                history,
                 dependencies: Self::parse_dependencies(&node),
             };
             
             // Sadece geçerli paketleri ekle (isim ve versiyonu olan)
-            if package_name != "Unknown" && !version.is_empty() {
+            if package_name != "Unknown" && !package.version.is_empty() {
                 packages.push(package);
             }
         }
 
         println!("Successfully parsed {} valid packages from Pisi index", packages.len());
         Ok(packages)
-    }
-
-    /// <Obsoletes> tag'i içindeki paketleri kontrol et
-    fn is_in_obsoletes(node: &roxmltree::Node) -> bool {
-        let mut current = node.parent();
-        while let Some(parent) = current {
-            if parent.has_tag_name("Obsoletes") {
-                return true;
-            }
-            current = parent.parent();
-        }
-        false
     }
 
     fn get_text(node: &roxmltree::Node, tag_name: &str) -> Option<String> {
@@ -216,6 +213,25 @@ impl XmlParser {
             .find(|n| n.has_tag_name(tag_name))
             .and_then(|n| n.text())
             .map(|s| s.trim().to_string())
+    }
+
+    fn get_multilang_text(node: &roxmltree::Node, tag_name: &str) -> Option<String> {
+        let mut fallback = None;
+        for child in node.children() {
+            if child.is_element() && child.tag_name().name() == tag_name {
+                let lang = child.attribute((roxmltree::NS_XML_URI, "lang")).unwrap_or("");
+                if lang == "tr" {
+                    return child.text().map(|s| s.to_string());
+                }
+                if lang == "en" {
+                    fallback = child.text().map(|s| s.to_string());
+                }
+                if fallback.is_none() {
+                    fallback = child.text().map(|s| s.to_string());
+                }
+            }
+        }
+        fallback
     }
 
     /// Paketlerin içinde bulunduğu bileşenleri (Category/Component) ve sayılarını döner
@@ -303,9 +319,9 @@ impl XmlParser {
     }
 
     fn parse_source(node: &roxmltree::Node) -> Option<Source> {
-        if let Some(source_node) = node.descendants().find(|n| n.has_tag_name("Source")) {
-            let name = source_node.attribute("name").unwrap_or("").to_string();
-            let homepage = source_node.attribute("homepage").unwrap_or("").to_string();
+        if let Some(source_node) = node.children().find(|n| n.has_tag_name("Source")) {
+            let name = Self::get_text(&source_node, "Name").unwrap_or_default();
+            let homepage = Self::get_text(&source_node, "Homepage").unwrap_or_default();
             
             if !name.is_empty() {
                 return Some(Source { name, homepage });
@@ -317,15 +333,17 @@ impl XmlParser {
     fn parse_history(node: &roxmltree::Node) -> Vec<PackageHistory> {
         let mut history = Vec::new();
         
-        if let Some(history_node) = node.descendants().find(|n| n.has_tag_name("History")) {
-            for update_node in history_node.descendants().filter(|n| n.has_tag_name("Update")) {
-                let version = update_node.attribute("version").unwrap_or("").to_string();
+        if let Some(history_node) = node.children().find(|n| n.has_tag_name("History")) {
+            for update_node in history_node.children().filter(|n| n.has_tag_name("Update")) {
                 let release = update_node.attribute("release")
                     .and_then(|s| s.parse().ok())
                     .unwrap_or(1);
-                let date = update_node.attribute("date").unwrap_or("").to_string();
+                let version = Self::get_text(&update_node, "Version").unwrap_or_default();
+                let date = Self::get_text(&update_node, "Date").unwrap_or_default();
                 
-                history.push(PackageHistory { version, release, date });
+                if !version.is_empty() {
+                    history.push(PackageHistory { version, release, date });
+                }
             }
         }
         
@@ -335,11 +353,13 @@ impl XmlParser {
     fn parse_dependencies(node: &roxmltree::Node) -> Vec<Dependency> {
         let mut deps = Vec::new();
         
-        if let Some(deps_node) = node.descendants().find(|n| n.has_tag_name("RuntimeDependencies")) {
-            for package_node in deps_node.descendants().filter(|n| n.has_tag_name("Package")) {
-                let name = package_node.text().unwrap_or("").trim().to_string();
-                let version = package_node.attribute("version").map(|s| s.to_string());
-                let release = package_node.attribute("release").and_then(|s| s.parse().ok());
+        if let Some(deps_node) = node.children().find(|n| n.has_tag_name("RuntimeDependencies")) {
+            for dep_node in deps_node.children().filter(|n| n.has_tag_name("Dependency")) {
+                let name = dep_node.text().unwrap_or("").trim().to_string();
+                let version = dep_node.attribute("version").map(|s| s.to_string())
+                    .or_else(|| dep_node.attribute("versionFrom").map(|s| s.to_string()));
+                let release = dep_node.attribute("release").and_then(|s| s.parse().ok())
+                    .or_else(|| dep_node.attribute("releaseFrom").and_then(|s| s.parse().ok()));
                 
                 if !name.is_empty() {
                     deps.push(Dependency { name, version, release });

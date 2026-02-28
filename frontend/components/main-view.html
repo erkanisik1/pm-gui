@@ -1,18 +1,16 @@
 <div class="content-header">
-    <div class="search-section">
-        <div class="search-box">
-            <input type="text" id="search-input" data-i18n="search_placeholder" placeholder="Paket ara...">
-            <button id="search-btn"><i class="fa fa-search"></i></button>
-        </div>
-        <div class="filter-buttons">
-            <button class="filter-btn active" data-filter="all" data-i18n="all">Tümü</button>
-            <button class="filter-btn" data-filter="installed"><span data-i18n="installed_packages">Kurulu</span> (<span
-                    id="installed-count">0</span>)</button>
-            <button class="filter-btn" data-filter="available"><span data-i18n="installable_packages">Kurulabilir</span>
-                (<span id="available-count">0</span>)</button>
-            <button class="filter-btn" data-filter="updates"><span data-i18n="upgradable_packages">Güncellenecek</span>
-                (<span id="updates-count">0</span>)</button>
-        </div>
+    <div class="search-box">
+        <input type="text" id="search-input" data-i18n="search_placeholder" placeholder="Paket ara...">
+        <button id="search-btn"><i class="fa fa-search"></i></button>
+    </div>
+    <div class="filter-buttons">
+        <button class="filter-btn active" data-filter="all" data-i18n="all">Tümü</button>
+        <button class="filter-btn" data-filter="installed"><span data-i18n="installed_packages">Kurulu</span> (<span
+                id="installed-count">0</span>)</button>
+        <button class="filter-btn" data-filter="available"><span data-i18n="installable_packages">Kurulabilir</span>
+            (<span id="available-count">0</span>)</button>
+        <button class="filter-btn" data-filter="updates"><span data-i18n="upgradable_packages">Güncellenecek</span>
+            (<span id="updates-count">0</span>)</button>
     </div>
 </div>
 <div id="packages-container" class="packages-container">
@@ -21,6 +19,7 @@
         <p data-i18n="loading_packages">Paketler yükleniyor...</p>
     </div>
     <div id="packages-grid" class="packages-grid" style="display: none;"></div>
+
     <div id="empty-state" class="empty-state" style="display: none;">
         <div class="empty-icon"><i class="fa fa-package"></i></div>
         <h3 data-i18n="no_packages_found">Paket bulunamadı</h3>

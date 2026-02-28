@@ -71,6 +71,11 @@ pub async fn update_repo() -> Result<(), String> {
 }
 
 #[tauri::command]
+pub async fn get_package_icon(icon_name: String) -> Result<String, String> {
+    package_manager::get_package_icon(icon_name).await
+}
+
+#[tauri::command]
 pub async fn get_installed_packages() -> Result<Vec<String>, String> {
     package_manager::get_installed_packages().await
 }

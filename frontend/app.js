@@ -283,8 +283,29 @@ function renderPackages() {
 
     elements.packagesGrid.innerHTML = filteredPackages.map(pkg => createPackageCard(pkg)).join('');
 
+    // İkonları asenkron yükle
+    loadPackageIcons();
+
     elements.packagesGrid.querySelectorAll('.package-card').forEach((card, idx) => {
         card.addEventListener('click', () => selectPackage(filteredPackages[idx]));
+    });
+}
+
+async function loadPackageIcons() {
+    const iconImages = document.querySelectorAll('img[data-pkg-icon]');
+    iconImages.forEach(async (img) => {
+        const iconName = img.dataset.pkgIcon;
+        if (!iconName) return;
+
+        try {
+            const b64Icon = await invoke('get_package_icon', { iconName });
+            if (b64Icon) {
+                img.src = b64Icon;
+            }
+        } catch (e) {
+            // İkon bulunamadıysa kategori ikonu kalmaya devam eder
+            // console.debug(`Icon not found for ${iconName}`);
+        }
     });
 }
 
@@ -308,15 +329,22 @@ function getPackageIcon(partOf) {
 }
 
 function createPackageCard(pkg) {
-    const icon = getPackageIcon(pkg.part_of);
+    const fallbackIcon = getPackageIcon(pkg.part_of);
+    const iconName = pkg.icon;
+
     return `
-        <div class="package-card">
+        <div class="package-card" data-package="${pkg.name}">
             <div class="package-header">
                 <div>
                     <div class="package-name">${pkg.name}</div>
                     <div class="package-version">v${pkg.version || '0.1'}</div>
                 </div>
-                <div class="package-icon"><img src="${icon}" alt="${pkg.name}" onerror="this.src='assets/icons/package.png'"></div>
+                <div class="package-icon">
+                    <img src="${fallbackIcon}" 
+                         alt="${pkg.name}" 
+                         data-pkg-icon="${iconName || ''}"
+                         onerror="this.src='assets/icons/package.png'">
+                </div>
             </div>
             <div class="package-summary">${pkg.summary}</div>
             <div class="package-info">
@@ -389,10 +417,12 @@ function renderComponents(components) {
         const displayName = comp.id === 'all' ? allText : comp.name;
 
         return `
-            <button class="component-btn ${comp.id === currentComponent ? 'active' : ''}" 
-            data-component="${comp.id}">
-                ${displayName} (${comp.package_count})
-            </button>
+            <li>
+                <button class="component-btn ${comp.id === currentComponent ? 'active' : ''}" 
+                data-component="${comp.id}">
+                    ${displayName} (${comp.package_count})
+                </button>
+            </li>
         `;
     }).join('');
 

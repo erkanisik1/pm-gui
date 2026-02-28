@@ -1,19 +1,12 @@
-use eframe::egui;
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum Theme {
     Light,
     Dark,
 }
 
 impl Theme {
-    pub fn apply(&self, ctx: &egui::Context) {
-        match self {
-            Theme::Light => ctx.set_visuals(egui::Visuals::light()),
-            Theme::Dark => ctx.set_visuals(egui::Visuals::dark()),
-        }
-    }
-
     pub fn name(&self) -> &str {
         match self {
             Theme::Light => "Light",

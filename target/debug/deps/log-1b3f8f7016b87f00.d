@@ -1,0 +1,13 @@
+/media/yedekleme/github/erkanisik/pm-gui/target/debug/deps/log-1b3f8f7016b87f00.d: /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/lib.rs /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/macros.rs /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/serde.rs /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/kv/mod.rs /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/kv/error.rs /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/kv/key.rs /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/kv/source.rs /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/kv/value.rs /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/__private_api.rs
+
+/media/yedekleme/github/erkanisik/pm-gui/target/debug/deps/liblog-1b3f8f7016b87f00.rmeta: /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/lib.rs /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/macros.rs /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/serde.rs /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/kv/mod.rs /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/kv/error.rs /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/kv/key.rs /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/kv/source.rs /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/kv/value.rs /home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/__private_api.rs
+
+/home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/lib.rs:
+/home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/macros.rs:
+/home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/serde.rs:
+/home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/kv/mod.rs:
+/home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/kv/error.rs:
+/home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/kv/key.rs:
+/home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/kv/source.rs:
+/home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/kv/value.rs:
+/home/erkanisik/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/log-0.4.29/src/__private_api.rs:

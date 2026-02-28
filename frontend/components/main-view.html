@@ -1,0 +1,32 @@
+<div class="content-header">
+    <div class="search-section">
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="Paket ara...">
+            <button id="search-btn"><i class="fa fa-search"></i></button>
+        </div>
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all">Tümü</button>
+            <button class="filter-btn" data-filter="installed">Kurulu (<span id="installed-count">0</span>)</button>
+            <button class="filter-btn" data-filter="available">Kurulabilir (<span
+                    id="available-count">0</span>)</button>
+            <button class="filter-btn" data-filter="updates">Güncellenecek (<span id="updates-count">0</span>)</button>
+        </div>
+    </div>
+</div>
+<div id="packages-container" class="packages-container">
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Paketler yükleniyor...</p>
+    </div>
+    <div id="packages-grid" class="packages-grid" style="display: none;"></div>
+    <div id="empty-state" class="empty-state" style="display: none;">
+        <div class="empty-icon">📦</div>
+        <h3>Paket bulunamadı</h3>
+    </div>
+</div>
+<div id="details-panel" class="details-panel" style="display: none;">
+    <div class="details-content">
+        <button id="close-details" class="close-btn">&times;</button>
+        <div id="package-details"></div>
+    </div>
+</div>

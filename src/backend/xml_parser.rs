@@ -1,8 +1,16 @@
+use serde::{Serialize, Deserialize};
 use anyhow::Result;
 use roxmltree::Document;
 use std::collections::HashMap;
+use std::path::Path;
+use std::fs;
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
 
-#[derive(Debug, Clone)]
+// RAM Önbelleği (Uygulama açıkken tekrar parse etmemek için)
+static CACHED_PACKAGES: Lazy<Mutex<Option<Vec<PackageInfo>>>> = Lazy::new(|| Mutex::new(None));
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PackageInfo {
     pub name: String,
     pub summary: String,
@@ -22,27 +30,27 @@ pub struct PackageInfo {
     pub dependencies: Vec<Dependency>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Source {
     pub name: String,
     pub homepage: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PackageHistory {
     pub version: String,
     pub release: u32,
     pub date: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Dependency {
     pub name: String,
     pub version: Option<String>,
     pub release: Option<u32>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Component {
     pub name: String,
     pub package_count: usize,
@@ -51,14 +59,77 @@ pub struct Component {
 pub struct XmlParser;
 
 impl XmlParser {
+    const INDEX_PATH: &'static str = "/var/lib/pisi/index/stable2/pisi-index.xml";
+    const CACHE_PATH: &'static str = "/tmp/pisi-pm-index-cache.bin";
+
     pub fn load_pisi_index() -> Result<Vec<PackageInfo>> {
-        let path = "/var/lib/pisi/index/stable2/pisi-index.xml";
-        println!("Loading Pisi index from: {}", path);
-        
-        let xml_content = std::fs::read_to_string(path)
+        // 1. Durum: RAM'de var mı?
+        {
+            let cache = CACHED_PACKAGES.lock().unwrap();
+            if let Some(packages) = &*cache {
+                return Ok(packages.clone());
+            }
+        }
+
+        // 2. Durum: Disk önbelleği (Binary Cache) kontrolü
+        if let Some(cached) = Self::load_from_binary_cache()? {
+            let mut cache = CACHED_PACKAGES.lock().unwrap();
+            *cache = Some(cached.clone());
+            return Ok(cached);
+        }
+
+        // 3. Durum: Hiçbiri yoksa XML'den parse et
+        println!("No valid cache found. Parsing XML from: {}", Self::INDEX_PATH);
+        let xml_content = fs::read_to_string(Self::INDEX_PATH)
             .map_err(|e| anyhow::anyhow!("Failed to read Pisi index file: {}", e))?;
         
-        Self::parse_pisi_index(&xml_content)
+        let packages = Self::parse_pisi_index(&xml_content)?;
+        
+        // Diske kaydet
+        Self::save_to_binary_cache(&packages)?;
+        
+        // RAM'e kaydet
+        let mut cache = CACHED_PACKAGES.lock().unwrap();
+        *cache = Some(packages.clone());
+        
+        Ok(packages)
+    }
+
+    fn load_from_binary_cache() -> Result<Option<Vec<PackageInfo>>> {
+        let xml_path = Path::new(Self::INDEX_PATH);
+        let cache_path = Path::new(Self::CACHE_PATH);
+
+        if !xml_path.exists() || !cache_path.exists() {
+            return Ok(None);
+        }
+
+        // Tarih kontrolü: Eğer XML, Cache'den daha yeniyse geçersizdir
+        let xml_mtime = fs::metadata(xml_path)?.modified()?;
+        let cache_mtime = fs::metadata(cache_path)?.modified()?;
+
+        if xml_mtime > cache_mtime {
+            println!("XML index updated, cache is stale.");
+            return Ok(None);
+        }
+
+        // Binary cache'i oku
+        println!("Loading packages from binary cache: {}", Self::CACHE_PATH);
+        let bytes = fs::read(cache_path)?;
+        let packages: Vec<PackageInfo> = bincode::deserialize(&bytes)
+            .map_err(|e| anyhow::anyhow!("Failed to deserialize cache: {}", e))?;
+
+        Ok(Some(packages))
+    }
+
+    fn save_to_binary_cache(packages: &[PackageInfo]) -> Result<()> {
+        println!("Saving packages to binary cache...");
+        let bytes = bincode::serialize(packages)
+            .map_err(|e| anyhow::anyhow!("Failed to serialize cache: {}", e))?;
+        
+        fs::write(Self::CACHE_PATH, bytes)
+            .map_err(|e| anyhow::anyhow!("Failed to write cache file: {}", e))?;
+        
+        Ok(())
     }
 
     pub fn parse_pisi_index(xml_content: &str) -> Result<Vec<PackageInfo>> {
@@ -75,19 +146,6 @@ impl XmlParser {
             let package_name = Self::get_text(&node, "Name")
                 .unwrap_or_else(|| "Unknown".to_string());
             
-            // Eğer paket ismi hala "Unknown" ise, debug et
-            if package_name == "Unknown" && packages.len() < 3 {
-                println!("=== DEBUG: Package with Unknown name ===");
-                println!("Node: {:?}", node.tag_name().name());
-                println!("All direct children:");
-                for child in node.children() {
-                    if child.is_element() {
-                        println!("  - {}: {:?}", child.tag_name().name(), child.text());
-                    }
-                }
-                println!("================");
-            }
-
             let part_of = Self::get_text(&node, "PartOf").unwrap_or_else(|| "system".to_string());
             let version = Self::get_text(&node, "Version").unwrap_or_default();
             
@@ -121,14 +179,6 @@ impl XmlParser {
             // Sadece geçerli paketleri ekle (isim ve versiyonu olan)
             if package_name != "Unknown" && !version.is_empty() {
                 packages.push(package);
-            }
-        }
-
-        // Debug: İlk 3 paketi göster
-        if !packages.is_empty() {
-            println!("First 3 packages parsed correctly:");
-            for pkg in packages.iter().take(3) {
-                println!("  - {}: {} (PartOf: {})", pkg.name, pkg.summary, pkg.part_of);
             }
         }
 
@@ -169,16 +219,6 @@ impl XmlParser {
         for package in packages {
             let component_name = Self::format_component_name(&package.part_of);
             *component_counts.entry(component_name).or_insert(0) += 1;
-        }
-
-        println!("Found {} unique components:", component_counts.len());
-        
-        // Component'leri ve paket sayılarını göster
-        let mut components_list: Vec<(&String, &usize)> = component_counts.iter().collect();
-        components_list.sort_by(|a, b| b.1.cmp(a.1)); // Paket sayısına göre sırala
-        
-        for (name, count) in components_list.iter().take(15) {
-            println!("  - {}: {} packages", name, count);
         }
 
         let mut components: Vec<Component> = component_counts

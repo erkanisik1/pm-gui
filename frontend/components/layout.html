@@ -1,0 +1,37 @@
+<div id="header-wrapper"></div>
+<div class="main-container">
+    <div id="sidebar-wrapper"></div>
+    <main class="main-content">
+        <div id="view-content"></div>
+    </main>
+</div>
+
+<!-- Settings Modal -->
+<div id="settings-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Ayarlar</h2>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="settings-section">
+                <h3>Genel</h3>
+                <label>
+                    <input type="checkbox" id="auto-updates" checked>
+                    Otomatik güncelleme kontrolü
+                </label>
+                <label>
+                    <input type="checkbox" id="show-desktop-apps" checked>
+                    Sadece masaüstü uygulamalarını göster
+                </label>
+            </div>
+            <div class="settings-section">
+                <h3>Cache</h3>
+                <label>
+                    Cache boyutu: <input type="number" id="cache-size" value="1024"> MB
+                </label>
+                <button id="clear-cache">Cache'i temizle</button>
+            </div>
+        </div>
+    </div>
+</div>

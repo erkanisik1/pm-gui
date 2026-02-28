@@ -1,0 +1,46 @@
+<aside class="sidebar">
+
+
+    <div class="sidebar-section">
+        <h3>Bileşenler</h3>
+        <div id="components-list" class="components-list">
+            <button class="component-btn active" data-component="all">
+                Tümü (<span id="sidebar-comp-total-count">0</span>)
+            </button>
+            <!-- Components will be loaded dynamically -->
+        </div>
+    </div>
+    <div class="sidebar-section">
+        <h3>Kategoriler</h3>
+        <div class="category-list">
+            <button class="category-btn active" data-category="all">
+                📚 Tüm Paketler (<span id="sidebar-total-count">0</span>)
+            </button>
+            <button class="category-btn" data-category="installed">
+                📦 Kurulu Paketler (<span id="sidebar-installed-count">0</span>)
+            </button>
+            <button class="category-btn" data-category="updates">
+                🔄 Güncellemeler (<span id="sidebar-updates-count">0</span>)
+            </button>
+            <button class="category-btn" data-category="explorer">
+                🔍 Keşfet
+            </button>
+        </div>
+    </div>
+    <div class="sidebar-section">
+        <h3>Repo Durumu</h3>
+        <div class="repo-status">
+            <div class="status-item">
+                <span class="status-dot online"></span>
+                Stable Repo
+            </div>
+            <div class="status-item">
+                <span class="status-dot online"></span>
+                Contrib Repo
+            </div>
+            <div class="status-item">
+                <span class="status-text">Son sync: Az önce</span>
+            </div>
+        </div>
+    </div>
+</aside>

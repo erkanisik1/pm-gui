@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Pisi Package Manager",
+  "version": "0.1.0",
+  "identifier": "com.pisilinux.package-manager",
+  "build": {
+    "beforeDevCommand": "cd frontend && python3 -m http.server 8000",
+    "beforeBuildCommand": "echo 'Frontend ready'",
+    "devUrl": "http://localhost:8000",
+    "frontendDist": "../frontend"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "Pisi GNU/Linux Paket Yöneticisi",
+        "width": 1200,
+        "height": 800
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all"
+  }
+}

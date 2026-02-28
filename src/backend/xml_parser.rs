@@ -52,7 +52,7 @@ pub struct XmlParser;
 
 impl XmlParser {
     pub fn load_pisi_index() -> Result<Vec<PackageInfo>> {
-        let path = "/var/lib/pisi/index/Stable/pisi-index.xml";
+        let path = "/var/lib/pisi/index/stable2/pisi-index.xml";
         println!("Loading Pisi index from: {}", path);
         
         let xml_content = std::fs::read_to_string(path)

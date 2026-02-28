@@ -87,3 +87,24 @@ pub async fn get_installed_packages() -> Result<Vec<String>, String> {
         Err(format!("Failed to get installed packages: {}", error))
     }
 }
+
+#[tauri::command]
+pub async fn get_upgradable_packages() -> Result<Vec<String>, String> {
+    let output = Command::new("pisi")
+        .args(["list-upgrades"])
+        .output()
+        .map_err(|e| e.to_string())?;
+
+    if output.status.success() {
+        let output_str = String::from_utf8_lossy(&output.stdout);
+        let packages: Vec<String> = output_str
+            .lines()
+            .map(|line| line.split_whitespace().next().unwrap_or("").to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+        Ok(packages)
+    } else {
+        let error = String::from_utf8_lossy(&output.stderr);
+        Err(format!("Failed to get upgradable packages: {}", error))
+    }
+}

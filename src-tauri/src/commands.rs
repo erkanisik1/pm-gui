@@ -5,20 +5,34 @@ use pm_core::backend::xml_parser::{PackageInfo, Component};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PackageStats {
-    total_count: usize,
-    installed_count: usize,
-    available_count: usize,
-    updates_count: usize,
+    pub total_count: usize,
+    pub installed_count: usize,
+    pub available_count: usize,
+    pub updates_count: usize,
 }
 
 #[tauri::command]
 pub async fn get_package_stats() -> Result<PackageStats, String> {
+    let packages = package_manager::get_packages().await?;
+    let installed = package_manager::get_installed_packages().await?;
+    let updates = package_manager::get_upgradable_packages().await?;
+    
+    let total_count = packages.len();
+    let installed_count = installed.len();
+    let available_count = if total_count > installed_count { total_count - installed_count } else { 0 };
+    let updates_count = updates.len();
+
     Ok(PackageStats {
-        total_count: 6501,
-        installed_count: 3127,
-        available_count: 3374,
-        updates_count: 15,
+        total_count,
+        installed_count,
+        available_count,
+        updates_count,
     })
+}
+
+#[tauri::command]
+pub async fn get_upgradable_packages() -> Result<Vec<String>, String> {
+    package_manager::get_upgradable_packages().await
 }
 
 #[tauri::command]

@@ -47,6 +47,8 @@ function setupMockInvoke() {
 
 // Global state
 let packages = [];
+let installedPackageNames = [];
+let upgradablePackageNames = [];
 let filteredPackages = [];
 let selectedPackage = null;
 let currentCategory = 'all';
@@ -128,10 +130,19 @@ function updateElementReferences() {
 async function refreshData() {
     try {
         const stats = await invoke('get_package_stats');
+        console.log('Stats loaded:', stats);
         updateUIStats(stats);
 
         showLoading(true);
         packages = await invoke('get_packages');
+        console.log(`Loaded ${packages.length} total packages`);
+
+        installedPackageNames = await invoke('get_installed_packages');
+        console.log(`Loaded ${installedPackageNames.length} installed packages`);
+
+        upgradablePackageNames = await invoke('get_upgradable_packages');
+        console.log(`Loaded ${upgradablePackageNames.length} upgradable packages`);
+
         const components = await invoke('get_components');
         renderComponents(components);
 
@@ -206,10 +217,27 @@ function filterAndRender() {
     const query = elements.searchInput?.value.toLowerCase().trim() || '';
 
     filteredPackages = packages.filter(pkg => {
+        // Arama sorgusu filtresi
         if (query && !pkg.name.toLowerCase().includes(query) && !pkg.summary.toLowerCase().includes(query)) {
             return false;
         }
-        if (currentComponent !== 'all' && pkg.part_of !== currentComponent) return false;
+
+        // Bileşen (Component) filtresi
+        if (currentComponent !== 'all' && pkg.part_of !== currentComponent) {
+            return false;
+        }
+
+        // Kategori / Filtre mantığı (Sidebar ve Üst Filtre Butonları)
+        const filterStr = currentCategory !== 'all' ? currentCategory : currentFilter;
+
+        if (filterStr === 'installed') {
+            return installedPackageNames.includes(pkg.name);
+        } else if (filterStr === 'updates') {
+            return upgradablePackageNames.includes(pkg.name);
+        } else if (filterStr === 'available') {
+            return !installedPackageNames.includes(pkg.name);
+        }
+
         return true;
     });
 
@@ -235,7 +263,27 @@ function renderPackages() {
     });
 }
 
+function getPackageIcon(partOf) {
+    if (!partOf) return 'assets/icons/package.png';
+    const p = partOf.toLowerCase();
+
+    if (p.includes('office')) return 'assets/icons/office.png';
+    if (p.includes('multimedia.sound') || p.includes('audio')) return 'assets/icons/multimedia-audio.png';
+    if (p.includes('multimedia.video') || p.includes('video')) return 'assets/icons/multimedia-video.png';
+    if (p.includes('multimedia.graphics') || p.includes('image')) return 'assets/icons/multimedia-photo.png';
+    if (p.includes('web') || p.includes('internet')) return 'assets/icons/web-browser.png';
+    if (p.includes('programming') || p.includes('devel')) return 'assets/icons/programming.png';
+    if (p.includes('system.base') || p.includes('kernel')) return 'assets/icons/system-core.png';
+    if (p.includes('desktop.kde') || p.includes('desktop.plasma')) return 'assets/icons/kde.png';
+    if (p.includes('game')) return 'assets/icons/games.png';
+    if (p.includes('security')) return 'assets/icons/security.png';
+    if (p.includes('network')) return 'assets/icons/network.png';
+
+    return 'assets/icons/package.png';
+}
+
 function createPackageCard(pkg) {
+    const icon = getPackageIcon(pkg.part_of);
     return `
         <div class="package-card">
             <div class="package-header">
@@ -243,7 +291,7 @@ function createPackageCard(pkg) {
                     <div class="package-name">${pkg.name}</div>
                     <div class="package-version">v${pkg.version || '0.1'}</div>
                 </div>
-                <div class="package-icon">📦</div>
+                <div class="package-icon"><img src="${icon}" alt="${pkg.name}" onerror="this.src='assets/icons/package.png'"></div>
             </div>
             <div class="package-summary">${pkg.summary}</div>
             <div class="package-info">
@@ -258,14 +306,50 @@ function selectPackage(pkg) {
     if (elements.detailsPanel) {
         elements.detailsPanel.style.display = 'block';
         if (elements.packageDetails) {
+            const isInstalled = installedPackageNames.includes(pkg.name);
+            const hasUpdate = upgradablePackageNames.includes(pkg.name);
+
             elements.packageDetails.innerHTML = `
                 <h2>${pkg.name}</h2>
-                <p>${pkg.summary}</p>
+                <div class="package-meta">
+                    <span><strong>${i18n.t('version')}:</strong> ${pkg.version}</span>
+                    <span><strong>${i18n.t('category')}:</strong> ${pkg.part_of}</span>
+                </div>
+                <p class="package-description">${pkg.description || pkg.summary}</p>
                 <div class="detail-actions">
-                    <button class="btn-install">📥 ${i18n.t('install')}</button>
-                    <button class="btn-remove">🗑️ ${i18n.t('remove')}</button>
+                    ${!isInstalled ? `<button class="btn-install" id="action-install">📥 ${i18n.t('install')}</button>` : ''}
+                    ${isInstalled ? `<button class="btn-remove" id="action-remove">🗑️ ${i18n.t('remove')}</button>` : ''}
+                    ${hasUpdate ? `<button class="btn-update" id="action-update">🔄 ${i18n.t('update')}</button>` : ''}
                 </div>
             `;
+
+            // Butonlara event listener ekle
+            document.getElementById('action-install')?.addEventListener('click', async () => {
+                try {
+                    showLoading(true);
+                    await invoke('install_package', { packageName: pkg.name });
+                    await refreshData();
+                } catch (e) { alert(e); }
+                finally { showLoading(false); }
+            });
+
+            document.getElementById('action-remove')?.addEventListener('click', async () => {
+                try {
+                    showLoading(true);
+                    await invoke('remove_package', { packageName: pkg.name });
+                    await refreshData();
+                } catch (e) { alert(e); }
+                finally { showLoading(false); }
+            });
+
+            document.getElementById('action-update')?.addEventListener('click', async () => {
+                try {
+                    showLoading(true);
+                    await invoke('update_package', { packageName: pkg.name });
+                    await refreshData();
+                } catch (e) { alert(e); }
+                finally { showLoading(false); }
+            });
         }
     }
 }
@@ -275,10 +359,11 @@ function renderComponents(components) {
 
     const allText = i18n.t('all');
     elements.componentsList.innerHTML = components.map(comp => {
-        const name = comp.name === 'All' ? allText : comp.name;
+        // "all" id'li bileşen için "Tümü" çevirisini kullan, diğerleri için name'i kullan
+        const displayName = comp.id === 'all' ? allText : comp.name;
         return `
-            <button class="component-btn ${comp.name === currentComponent ? 'active' : ''}" data-component="${comp.name}">
-                ${name} (${comp.package_count})
+            <button class="component-btn ${comp.id === currentComponent ? 'active' : ''}" data-component="${comp.id}">
+                ${displayName} (${comp.package_count})
             </button>
         `;
     }).join('');

@@ -52,6 +52,7 @@ pub struct Dependency {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Component {
+    pub id: String,
     pub name: String,
     pub package_count: usize,
 }
@@ -213,30 +214,36 @@ impl XmlParser {
             .map(|s| s.trim().to_string())
     }
 
+    /// Paketlerin içinde bulunduğu bileşenleri (Category/Component) ve sayılarını döner
     pub fn parse_components(packages: &[PackageInfo]) -> Vec<Component> {
         let mut component_counts: HashMap<String, usize> = HashMap::new();
         
         for package in packages {
-            let component_name = Self::format_component_name(&package.part_of);
-            *component_counts.entry(component_name).or_insert(0) += 1;
+            let component_id = package.part_of.clone();
+            *component_counts.entry(component_id).or_insert(0) += 1;
         }
 
         let mut components: Vec<Component> = component_counts
             .into_iter()
-            .map(|(name, count)| Component {
-                name: name.clone(),
-                package_count: count,
+            .map(|(id, count)| {
+                let display_name = Self::format_component_name(&id);
+                Component {
+                    id: id.clone(),
+                    name: display_name,
+                    package_count: count,
+                }
             })
             .collect();
 
-        // "All" component'ını ekle
+        // "all" component'ını ekle
         let total_packages = packages.len();
         components.insert(0, Component {
+            id: "all".to_string(),
             name: "All".to_string(),
             package_count: total_packages,
         });
 
-        // Component'leri alfabetik sırala
+        // Component'leri alfabetik sırala (isime görey)
         components.sort_by(|a, b| a.name.cmp(&b.name));
         
         components

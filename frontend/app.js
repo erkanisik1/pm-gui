@@ -97,6 +97,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Event listener'ları bağla
     initializeEventListeners();
 
+    // Veriyi yüklemeden önce depoları güncelle
+    console.log('Updating repositories...');
+    try {
+        await invoke('update_repo');
+        console.log('Repositories updated successfully.');
+    } catch (e) {
+        console.error('Failed to update repositories:', e);
+    }
+
     // Veriyi yükle
     await refreshData();
 });

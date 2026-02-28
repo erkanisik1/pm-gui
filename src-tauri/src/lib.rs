@@ -14,6 +14,7 @@ pub fn run() {
         commands::search_packages,
         commands::get_installed_packages,
         commands::get_upgradable_packages,
+        commands::update_repo,
         commands::get_package_stats
     ])
     .setup(|app| {

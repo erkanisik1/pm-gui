@@ -66,6 +66,11 @@ pub async fn search_packages(query: String) -> Result<Vec<PackageInfo>, String> 
 }
 
 #[tauri::command]
+pub async fn update_repo() -> Result<(), String> {
+    package_manager::update_repo().await
+}
+
+#[tauri::command]
 pub async fn get_installed_packages() -> Result<Vec<String>, String> {
     package_manager::get_installed_packages().await
 }

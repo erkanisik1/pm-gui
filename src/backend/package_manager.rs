@@ -108,3 +108,17 @@ pub async fn get_upgradable_packages() -> Result<Vec<String>, String> {
         Err(format!("Failed to get upgradable packages: {}", error))
     }
 }
+
+#[tauri::command]
+pub async fn update_repo() -> Result<(), String> {
+    let output = Command::new("pisi")
+        .args(["ur"])
+        .output()
+        .map_err(|e| e.to_string())?;
+
+    if !output.status.success() {
+        let err = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Pisi update-repo failed: {}", err));
+    }
+    Ok(())
+}

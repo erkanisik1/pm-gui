@@ -1,0 +1,31 @@
+# Rust
+/target/
+Cargo.lock
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/
+src-tauri/Cargo.lock
+
+# Web Frontend (if node is used later)
+node_modules/
+.svelte-kit/
+.next/
+dist/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Pisi Cache (Local)
+pisi-pm-index-cache.bin
+
+# Python
+__pycache__/
+*.pyc

@@ -10,27 +10,35 @@
 <div id="settings-modal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>Ayarlar</h2>
+            <h2 data-i18n="settings">Ayarlar</h2>
             <button class="modal-close">&times;</button>
         </div>
         <div class="modal-body">
             <div class="settings-section">
-                <h3>Genel</h3>
+                <h3 data-i18n="general">Genel</h3>
+                <label>
+                    <span data-i18n="language">Dil</span>:
+                    <select id="lang-select">
+                        <option value="tr">Türkçe</option>
+                        <option value="en">English</option>
+                    </select>
+                </label>
                 <label>
                     <input type="checkbox" id="auto-updates" checked>
-                    Otomatik güncelleme kontrolü
+                    <span data-i18n="auto_update_check">Otomatik güncelleme kontrolü</span>
                 </label>
                 <label>
                     <input type="checkbox" id="show-desktop-apps" checked>
-                    Sadece masaüstü uygulamalarını göster
+                    <span data-i18n="show_desktop_only">Sadece masaüstü uygulamalarını göster</span>
                 </label>
             </div>
             <div class="settings-section">
-                <h3>Cache</h3>
+                <h3 data-i18n="cache">Cache</h3>
                 <label>
-                    Cache boyutu: <input type="number" id="cache-size" value="1024"> MB
+                    <span data-i18n="cache_size">Cache boyutu</span>: <input type="number" id="cache-size" value="1024">
+                    MB
                 </label>
-                <button id="clear-cache">Cache'i temizle</button>
+                <button id="clear-cache" data-i18n="clear_cache">Cache'i temizle</button>
             </div>
         </div>
     </div>

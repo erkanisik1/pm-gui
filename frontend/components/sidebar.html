@@ -2,33 +2,35 @@
 
 
     <div class="sidebar-section">
-        <h3>Bileşenler</h3>
+        <h3 data-i18n="components">Bileşenler</h3>
         <div id="components-list" class="components-list">
             <button class="component-btn active" data-component="all">
-                Tümü (<span id="sidebar-comp-total-count">0</span>)
+                <span data-i18n="all">Tümü</span> (<span id="sidebar-comp-total-count">0</span>)
             </button>
             <!-- Components will be loaded dynamically -->
         </div>
     </div>
     <div class="sidebar-section">
-        <h3>Kategoriler</h3>
+        <h3 data-i18n="categories">Kategoriler</h3>
         <div class="category-list">
             <button class="category-btn active" data-category="all">
-                📚 Tüm Paketler (<span id="sidebar-total-count">0</span>)
+                📚 <span data-i18n="all_packages">Tüm Paketler</span> (<span id="sidebar-total-count">0</span>)
             </button>
             <button class="category-btn" data-category="installed">
-                📦 Kurulu Paketler (<span id="sidebar-installed-count">0</span>)
+                📦 <span data-i18n="installed_packages">Kurulu Paketler</span> (<span
+                    id="sidebar-installed-count">0</span>)
             </button>
             <button class="category-btn" data-category="updates">
-                🔄 Güncellemeler (<span id="sidebar-updates-count">0</span>)
+                🔄 <span data-i18n="upgradable_packages">Güncellenecek</span> (<span
+                    id="sidebar-updates-count">0</span>)
             </button>
             <button class="category-btn" data-category="explorer">
-                🔍 Keşfet
+                🔍 <span data-i18n="discover">Keşfet</span>
             </button>
         </div>
     </div>
     <div class="sidebar-section">
-        <h3>Repo Durumu</h3>
+        <h3 data-i18n="repo_status">Repo Durumu</h3>
         <div class="repo-status">
             <div class="status-item">
                 <span class="status-dot online"></span>
@@ -39,7 +41,8 @@
                 Contrib Repo
             </div>
             <div class="status-item">
-                <span class="status-text">Son sync: Az önce</span>
+                <span class="status-text"><span data-i18n="last_sync">Son sync</span>: <span data-i18n="just_now">Az
+                        önce</span></span>
             </div>
         </div>
     </div>

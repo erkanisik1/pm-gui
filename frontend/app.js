@@ -1,3 +1,4 @@
+import { i18n } from './js/i18n.js';
 
 // Tauri API'nin yüklenmesini bekle
 let invoke;
@@ -66,6 +67,9 @@ async function loadComponent(path) {
 document.addEventListener('DOMContentLoaded', async () => {
     await waitForTauriAPI();
 
+    // Dil desteğini başlat
+    await i18n.init();
+
     // Layout ve Bileşenleri Yükle
     const appEl = document.getElementById('app');
     const layoutHTML = await loadComponent('components/layout.html');
@@ -81,6 +85,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('view-content').innerHTML = mainViewHTML;
 
     if (isDarkMode) document.body.classList.add('dark');
+
+    // Çevirileri ilk render sonrası uygula
+    i18n.applyTranslations();
 
     // Elementleri bul
     updateElementReferences();
@@ -109,8 +116,13 @@ function updateElementReferences() {
         sidebarTotal: document.getElementById('sidebar-total-count'),
         sidebarInstalled: document.getElementById('sidebar-installed-count'),
         sidebarUpdates: document.getElementById('sidebar-updates-count'),
-        sidebarCompTotal: document.getElementById('sidebar-comp-total-count')
+        sidebarCompTotal: document.getElementById('sidebar-comp-total-count'),
+        langSelect: document.getElementById('lang-select')
     };
+
+    if (elements.langSelect) {
+        elements.langSelect.value = i18n.currentLang;
+    }
 }
 
 async function refreshData() {
@@ -144,6 +156,18 @@ function updateUIStats(stats) {
 
 function initializeEventListeners() {
     elements.themeToggle?.addEventListener('click', toggleTheme);
+
+    // Dil seçimi
+    elements.langSelect?.addEventListener('change', async (e) => {
+        await i18n.setLanguage(e.target.value);
+    });
+
+    // Dil değiştiğinde UI'ı güncelle
+    document.addEventListener('langChanged', () => {
+        updateThemeToggleUI();
+        // Bileşenleri tekrar render etmek gerekebilir veya sadece statik metinleri güncelle
+        i18n.applyTranslations();
+    });
 
     document.getElementById('settings-btn')?.addEventListener('click', () => {
         if (elements.settingsModal) elements.settingsModal.style.display = 'block';
@@ -238,8 +262,8 @@ function selectPackage(pkg) {
                 <h2>${pkg.name}</h2>
                 <p>${pkg.summary}</p>
                 <div class="detail-actions">
-                    <button class="btn-install">📥 Kur</button>
-                    <button class="btn-remove">🗑️ Kaldır</button>
+                    <button class="btn-install">📥 ${i18n.t('install')}</button>
+                    <button class="btn-remove">🗑️ ${i18n.t('remove')}</button>
                 </div>
             `;
         }
@@ -248,11 +272,16 @@ function selectPackage(pkg) {
 
 function renderComponents(components) {
     if (!elements.componentsList) return;
-    elements.componentsList.innerHTML = components.map(comp => `
-        <button class="component-btn ${comp.name === currentComponent ? 'active' : ''}" data-component="${comp.name}">
-            ${comp.name} (${comp.package_count})
-        </button>
-    `).join('');
+
+    const allText = i18n.t('all');
+    elements.componentsList.innerHTML = components.map(comp => {
+        const name = comp.name === 'All' ? allText : comp.name;
+        return `
+            <button class="component-btn ${comp.name === currentComponent ? 'active' : ''}" data-component="${comp.name}">
+                ${name} (${comp.package_count})
+            </button>
+        `;
+    }).join('');
 
     document.querySelectorAll('.component-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -272,10 +301,16 @@ function showLoading(show) {
 function toggleTheme() {
     isDarkMode = !isDarkMode;
     document.body.classList.toggle('dark');
-    if (elements.themeToggle) {
-        elements.themeToggle.innerHTML = isDarkMode ? '<i class="fa fa-sun-o"></i> Light' : '<i class="fa fa-moon-o"></i> Dark';
-    }
+    updateThemeToggleUI();
     localStorage.setItem('darkMode', isDarkMode);
+}
+
+function updateThemeToggleUI() {
+    if (elements.themeToggle) {
+        const textKey = isDarkMode ? 'theme_light' : 'theme_dark';
+        const icon = isDarkMode ? 'fa-sun-o' : 'fa-moon-o';
+        elements.themeToggle.innerHTML = `<i class="fa ${icon}"></i> <span data-i18n="${textKey}">${i18n.t(textKey)}</span>`;
+    }
 }
 
 function debounce(func, wait) {

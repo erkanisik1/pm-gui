@@ -2,6 +2,7 @@
     "app_title": "Pisi GNU/Linux Paket Yöneticisi",
     "theme_dark": "Koyu",
     "theme_light": "Açık",
+    "theme": "Tema",
     "settings": "Ayarlar",
     "categories": "Kategoriler",
     "all_packages": "Tüm Paketler",

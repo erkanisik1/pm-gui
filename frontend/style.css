@@ -35,7 +35,7 @@ body {
     background: var(--light-bg);
     color: var(--light-text);
     line-height: 1.6;
-    transition: all 0.3s ease;
+    
 }
 
 body.dark {
@@ -116,7 +116,7 @@ body.dark .modal-content {
     padding: 0.5rem 1rem;
     border-radius: var(--border-radius);
     cursor: pointer;
-    transition: all 0.3s ease;
+ 
 }
 
 .theme-btn:hover,
@@ -182,7 +182,6 @@ body.dark .modal-content {
     padding: 0.75rem 1rem;
     border-radius: var(--border-radius);
     cursor: pointer;
-    transition: all 0.3s ease;
     text-align: left;
     font-size: 0.9rem;
     width: 100%;
@@ -286,7 +285,6 @@ body.dark .modal-content {
     padding: 0.5rem 1rem;
     border-radius: var(--border-radius);
     cursor: pointer;
-    transition: all 0.3s ease;
     font-size: 0.85rem;
 }
 
@@ -308,7 +306,6 @@ body.dark .modal-content {
     padding: 0.5rem 1rem;
     border-radius: var(--border-radius);
     cursor: pointer;
-    transition: all 0.3s ease;
 }
 
 .view-btn.active {
@@ -360,7 +357,7 @@ body.dark .modal-content {
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     padding: 1.5rem;
-    transition: all 0.3s ease;
+  
     cursor: pointer;
 }
 
@@ -441,7 +438,7 @@ body.dark .modal-content {
     border-radius: var(--border-radius);
     cursor: pointer;
     font-weight: 500;
-    transition: all 0.3s ease;
+  
 }
 
 .btn-install {

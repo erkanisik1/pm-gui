@@ -1,6 +1,18 @@
 <aside class="sidebar">
-
-
+    <style>
+        .theme-btn, .settings-btn {
+            margin: 5px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 5px 10px;
+            color: rgb(140, 140, 141);
+            background-color: transparent;
+        }
+    </style>
+    
+    <button id="theme-toggle" class="theme-btn"><i class="fa fa-moon-o"></i></button>
+    <button id="settings-btn" class="settings-btn"><i class="fa fa-cog"></i> </button>
+    <hr>
     <div class="sidebar-section">
         <h3 data-i18n="components">Bileşenler</h3>
         <ul id="components-list" class="components-list">

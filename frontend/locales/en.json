@@ -2,6 +2,7 @@
     "app_title": "Pisi GNU/Linux Package Manager",
     "theme_dark": "Dark",
     "theme_light": "Light",
+    "theme": "Theme",
     "settings": "Settings",
     "categories": "Categories",
     "all_packages": "All Packages",

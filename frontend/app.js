@@ -316,11 +316,11 @@ function getPackageIcon(partOf) {
     if (p.includes('office')) return 'assets/icons/office.png';
     if (p.includes('multimedia.sound') || p.includes('audio')) return 'assets/icons/multimedia-audio.png';
     if (p.includes('multimedia.video') || p.includes('video')) return 'assets/icons/multimedia-video.png';
-    if (p.includes('multimedia.graphics') || p.includes('image')) return 'assets/icons/multimedia-photo.png';
+    if (p.includes('multimedia.graphics') || p.includes('image')) return '/usr/share/icons/breeze/devices/64/camera-photo.svg';
     if (p.includes('web') || p.includes('internet')) return 'assets/icons/web-browser.png';
     if (p.includes('programming') || p.includes('devel')) return 'assets/icons/programming.png';
-    if (p.includes('system.base') || p.includes('kernel')) return 'assets/icons/system-core.png';
-    if (p.includes('desktop.kde') || p.includes('desktop.plasma')) return 'assets/icons/kde.png';
+    if (p.includes('system.base') || p.includes('kernel')) return 'assets/icons/core-system.svg';
+    if (p.includes('desktop.kde') || p.includes('desktop.plasma')) return '/usr/share/pixmaps/icons/kde-desktop.png';
     if (p.includes('game')) return 'assets/icons/games.png';
     if (p.includes('security')) return 'assets/icons/security.png';
     if (p.includes('network')) return 'assets/icons/network.png';
@@ -452,7 +452,7 @@ function updateThemeToggleUI() {
     if (elements.themeToggle) {
         const textKey = isDarkMode ? 'theme_light' : 'theme_dark';
         const icon = isDarkMode ? 'fa-sun-o' : 'fa-moon-o';
-        elements.themeToggle.innerHTML = `<i class="fa ${icon}"></i> <span data-i18n="${textKey}">${i18n.t(textKey)}</span>`;
+        elements.themeToggle.innerHTML = `<i class="fa ${icon}"></i>`;
     }
 }
 
